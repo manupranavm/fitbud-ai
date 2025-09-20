@@ -1,6 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ToastProvider } from "@/components/providers/ToastProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
@@ -12,28 +13,31 @@ import NutritionPage from "./pages/NutritionPage";
 import ProgressPage from "./pages/ProgressPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<AuthPage type="login" />} />
-          <Route path="/signup" element={<AuthPage type="signup" />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/workout" element={<WorkoutPage />} />
-          <Route path="/form-check" element={<FormCheckPage />} />
-          <Route path="/nutrition" element={<NutritionPage />} />
-          <Route path="/progress" element={<ProgressPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <ToastProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<AuthPage type="login" />} />
+            <Route path="/signup" element={<AuthPage type="signup" />} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/workout" element={<ProtectedRoute><WorkoutPage /></ProtectedRoute>} />
+            <Route path="/form-check" element={<ProtectedRoute><FormCheckPage /></ProtectedRoute>} />
+            <Route path="/nutrition" element={<ProtectedRoute><NutritionPage /></ProtectedRoute>} />
+            <Route path="/progress" element={<ProtectedRoute><ProgressPage /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </ToastProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

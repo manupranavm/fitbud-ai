@@ -1,4 +1,5 @@
 import React, { useState } from "react"
+import toast from "react-hot-toast"
 import { 
   User, 
   Bell, 
@@ -9,6 +10,7 @@ import {
   Save,
   LogOut
 } from "lucide-react"
+import { useAuth } from "@/hooks/useAuth"
 import { Header } from "@/components/layout/header"
 import { FitnessButton } from "@/components/ui/fitness-button"
 import { FitnessCard, FitnessCardContent, FitnessCardDescription, FitnessCardHeader, FitnessCardTitle } from "@/components/ui/fitness-card"
@@ -21,10 +23,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 const SettingsPage: React.FC = () => {
+  const { user, updateProfile, logout } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
   const [profileData, setProfileData] = useState({
-    name: "John Doe",
-    email: "john@example.com",
+    name: user?.name || "John Doe",
+    email: user?.email || "john@example.com",
     height: "5'10\"",
     weight: "175",
     age: "28",
@@ -46,12 +49,17 @@ const SettingsPage: React.FC = () => {
 
   const handleSaveProfile = () => {
     setIsEditing(false)
-    // Save profile logic here
+    updateProfile({ 
+      name: profileData.name, 
+      email: profileData.email 
+    })
+    toast.success("Profile updated successfully!")
   }
 
   const handleDeleteAccount = () => {
     // Show confirmation dialog and handle account deletion
     if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+      toast.success("Account deletion requested. Please check your email.")
       console.log("Delete account")
     }
   }
@@ -392,7 +400,7 @@ const SettingsPage: React.FC = () => {
                         Sign out of your account on this device
                       </p>
                     </div>
-                    <FitnessButton variant="outline">
+                    <FitnessButton variant="outline" onClick={logout}>
                       <LogOut className="w-4 h-4" />
                       Sign Out
                     </FitnessButton>

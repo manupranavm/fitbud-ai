@@ -1,6 +1,8 @@
 import React, { useState } from "react"
 import { Link } from "react-router-dom"
+import toast from "react-hot-toast"
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft } from "lucide-react"
+import { useAuth } from "@/hooks/useAuth"
 import { FitnessButton } from "@/components/ui/fitness-button"
 import { FitnessCard, FitnessCardContent, FitnessCardDescription, FitnessCardHeader, FitnessCardTitle } from "@/components/ui/fitness-card"
 import { Input } from "@/components/ui/input"
@@ -13,6 +15,7 @@ interface AuthPageProps {
 }
 
 const AuthPage: React.FC<AuthPageProps> = ({ type }) => {
+  const { login, signup, isLoading } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
@@ -27,10 +30,24 @@ const AuthPage: React.FC<AuthPageProps> = ({ type }) => {
     ? "Sign in to continue your fitness transformation" 
     : "Create your account and begin achieving your goals"
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle authentication logic here
-    console.log("Auth form submitted:", formData)
+    
+    try {
+      if (isLogin) {
+        await login(formData.email, formData.password)
+        toast.success("Welcome back!")
+      } else {
+        if (formData.password !== formData.confirmPassword) {
+          toast.error("Passwords don't match")
+          return
+        }
+        await signup(formData.name, formData.email, formData.password)
+        toast.success("Account created successfully!")
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Authentication failed")
+    }
   }
 
   const handleInputChange = (field: string, value: string) => {
@@ -150,8 +167,8 @@ const AuthPage: React.FC<AuthPageProps> = ({ type }) => {
                   </div>
                 )}
 
-                <FitnessButton type="submit" className="w-full" size="lg">
-                  {isLogin ? "Sign In" : "Create Account"}
+                <FitnessButton type="submit" className="w-full" size="lg" disabled={isLoading}>
+                  {isLoading ? "Please wait..." : (isLogin ? "Sign In" : "Create Account")}
                 </FitnessButton>
               </form>
 

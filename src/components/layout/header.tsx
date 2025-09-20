@@ -1,6 +1,7 @@
 import React from "react"
 import { Link } from "react-router-dom"
 import { Activity, Bell, User } from "lucide-react"
+import { useAuth } from "@/hooks/useAuth"
 import { Navigation } from "./navigation"
 import { FitnessButton } from "@/components/ui/fitness-button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -14,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 const Header: React.FC = () => {
+  const { user, logout } = useAuth()
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 h-14 flex items-center justify-between">
@@ -51,9 +53,9 @@ const Header: React.FC = () => {
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">John Doe</p>
+                  <p className="text-sm font-medium leading-none">{user?.name || "User"}</p>
                   <p className="text-xs leading-none text-muted-foreground">
-                    john@example.com
+                    {user?.email || "user@example.com"}
                   </p>
                 </div>
               </DropdownMenuLabel>
@@ -65,7 +67,7 @@ const Header: React.FC = () => {
                 <Link to="/settings">Settings</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={logout}>
                 Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>

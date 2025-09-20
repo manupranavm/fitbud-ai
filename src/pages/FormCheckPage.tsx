@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react"
+import toast from "react-hot-toast"
 import { 
   Camera, 
   Upload, 
@@ -38,17 +39,20 @@ const FormCheckPage: React.FC = () => {
 
   const handleStartRecording = () => {
     setIsRecording(true)
+    toast.success("Recording started!")
     // In real app, start camera recording
   }
 
   const handleStopRecording = () => {
     setIsRecording(false)
     setHasRecorded(true)
+    toast.success("Recording completed! Analyzing...")
     // In real app, stop recording and process video
     
     // Simulate analysis after recording
     setTimeout(() => {
       setAnalysisResult(mockAnalysis)
+      toast.success("Form analysis complete!")
     }, 2000)
   }
 
@@ -57,10 +61,12 @@ const FormCheckPage: React.FC = () => {
     if (file) {
       setHasRecorded(true)
       setUploadMode("upload")
+      toast.success("Video uploaded! Analyzing...")
       
       // Simulate analysis
       setTimeout(() => {
         setAnalysisResult(mockAnalysis)
+        toast.success("Form analysis complete!")
       }, 2000)
     }
   }

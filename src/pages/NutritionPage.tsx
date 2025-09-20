@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react"
+import toast from "react-hot-toast"
 import { 
   Camera, 
   Upload, 
@@ -17,19 +18,22 @@ import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProgressRing } from "@/components/ui/progress-ring"
+import { useNutrition } from "@/hooks/useNutrition"
 import healthyFoodImage from "@/assets/healthy-food.jpg"
 
 const NutritionPage: React.FC = () => {
+  const { addFood, getTodaysTotals, goals } = useNutrition()
   const [scanResult, setScanResult] = useState<any>(null)
   const [portionSize, setPortionSize] = useState(100)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Mock data
+  // Get today's totals from the store
+  const todaysTotals = getTodaysTotals()
   const dailyGoals = {
-    calories: { current: 1450, target: 2200 },
-    protein: { current: 85, target: 120 },
-    carbs: { current: 180, target: 250 },
-    fat: { current: 65, target: 80 }
+    calories: { current: todaysTotals.calories, target: goals.calories },
+    protein: { current: todaysTotals.protein, target: goals.protein },
+    carbs: { current: todaysTotals.carbs, target: goals.carbs },
+    fat: { current: todaysTotals.fat, target: goals.fat }
   }
 
   const recentMeals = [
@@ -68,9 +72,11 @@ const NutritionPage: React.FC = () => {
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
+      toast.success("Food image uploaded! Analyzing...")
       // Simulate food recognition
       setTimeout(() => {
         setScanResult(mockScanResult)
+        toast.success("Food identified! Adjust portion size if needed.")
       }, 1500)
     }
   }
@@ -91,6 +97,21 @@ const NutritionPage: React.FC = () => {
   }
 
   const adjustedResult = adjustCalories(portionSize)
+
+  const handleAddToDiary = () => {
+    if (adjustedResult) {
+      addFood({
+        name: adjustedResult.foodName,
+        calories: adjustedResult.calories,
+        protein: adjustedResult.macros.protein,
+        carbs: adjustedResult.macros.carbs,
+        fat: adjustedResult.macros.fat
+      })
+      toast.success("Food added to diary!")
+      setScanResult(null)
+      setPortionSize(100)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -388,7 +409,7 @@ const NutritionPage: React.FC = () => {
                           </div>
                         </div>
 
-                        <FitnessButton className="w-full" size="lg">
+                        <FitnessButton onClick={handleAddToDiary} className="w-full" size="lg">
                           Add to Diary
                         </FitnessButton>
                       </div>

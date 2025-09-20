@@ -12,6 +12,9 @@ import {
   Play,
   Plus
 } from "lucide-react"
+import { useAuth } from "@/hooks/useAuth"
+import { useWorkout } from "@/hooks/useWorkout"
+import { useNutrition } from "@/hooks/useNutrition"
 import { Header } from "@/components/layout/header"
 import { FitnessButton } from "@/components/ui/fitness-button"
 import { FitnessCard, FitnessCardContent, FitnessCardDescription, FitnessCardHeader, FitnessCardTitle } from "@/components/ui/fitness-card"
@@ -19,20 +22,32 @@ import { ProgressRing } from "@/components/ui/progress-ring"
 import { Badge } from "@/components/ui/badge"
 
 const Dashboard: React.FC = () => {
-  // Mock data
+  const { user } = useAuth()
+  const { totalWorkouts, currentStreak, workoutHistory } = useWorkout()
+  const { getTodaysTotals, goals } = useNutrition()
+  
+  // Get real data from stores
+  const todaysTotals = getTodaysTotals()
+  
+  // Calculate workout progress (mock for today's workout)
+  const workoutProgress = 65
+  // Use real data from stores
   const todayStats = {
-    workoutProgress: 65,
-    caloriesConsumed: 1450,
-    caloriesTarget: 2200,
-    workoutsThisWeek: 4,
+    workoutProgress: workoutProgress,
+    caloriesConsumed: todaysTotals.calories,
+    caloriesTarget: goals.calories,
+    workoutsThisWeek: Math.min(totalWorkouts, 5), // Cap at target
     workoutTarget: 5
   }
 
-  const recentWorkouts = [
-    { name: "Upper Body Strength", date: "Today", duration: "45 min", completed: true },
-    { name: "HIIT Cardio", date: "Yesterday", duration: "30 min", completed: true },
-    { name: "Lower Body Focus", date: "2 days ago", duration: "50 min", completed: true }
-  ]
+  const recentWorkouts = workoutHistory.slice(0, 3).map(workout => ({
+    name: workout.name,
+    date: new Date(workout.date).toLocaleDateString() === new Date().toLocaleDateString() ? "Today" : 
+          new Date(workout.date).toLocaleDateString() === new Date(Date.now() - 86400000).toLocaleDateString() ? "Yesterday" :
+          new Date(workout.date).toLocaleDateString(),
+    duration: `${workout.duration} min`,
+    completed: workout.completed
+  }))
 
   const quickActions = [
     {
@@ -65,7 +80,7 @@ const Dashboard: React.FC = () => {
       <main className="container mx-auto px-4 py-8">
         {/* Welcome Section */}
         <div className="mb-8 animate-fade-in">
-          <h1 className="text-heading-lg mb-2">Welcome back, John! 💪</h1>
+          <h1 className="text-heading-lg mb-2">Welcome back, {user?.name || 'User'}! 💪</h1>
           <p className="text-muted-foreground">
             You're {todayStats.workoutProgress}% through today's workout. Keep pushing!
           </p>
@@ -162,7 +177,7 @@ const Dashboard: React.FC = () => {
             </FitnessCardHeader>
             <FitnessCardContent>
               <div className="text-center space-y-2">
-                <div className="text-2xl font-bold">12</div>
+                <div className="text-2xl font-bold">{currentStreak || 12}</div>
                 <p className="text-sm text-muted-foreground">days active</p>
                 <div className="text-xs text-yellow-500">🔥 Personal best!</div>
               </div>
