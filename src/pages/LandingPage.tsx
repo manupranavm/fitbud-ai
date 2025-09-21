@@ -40,7 +40,7 @@ const LandingPage: React.FC = () => {
           <div className="max-w-4xl mx-auto animate-fade-in">
             <h1 className="text-heading-xl text-white mb-6">
               Transform Your Fitness Journey with{" "}
-              <span className="bg-gradient-primary bg-clip-text text-transparent">
+              <span className="text-primary font-bold">
                 AI-Powered
               </span>{" "}
               Precision
