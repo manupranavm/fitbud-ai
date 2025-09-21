@@ -2,6 +2,7 @@ import React from "react"
 import { Link } from "react-router-dom"
 import { Activity, Bell, User } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
+import { Navigation } from "./navigation"
 
 import { FitnessButton } from "@/components/ui/fitness-button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -26,6 +27,9 @@ const Header: React.FC = () => {
           </div>
           <span className="font-heading font-bold text-xl">FitTracker</span>
         </Link>
+
+        {/* Desktop Navigation */}
+        <Navigation className="flex-1 justify-center" />
 
 
         {/* User Actions */}
@@ -70,6 +74,9 @@ const Header: React.FC = () => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* Mobile Navigation */}
+          <Navigation />
 
         </div>
       </div>
