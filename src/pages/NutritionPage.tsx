@@ -19,16 +19,25 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProgressRing } from "@/components/ui/progress-ring"
 import { useNutrition } from "@/hooks/useNutrition"
+import { useAuth } from "@/hooks/useAuth"
+import { useEffect } from "react"
 import healthyFoodImage from "@/assets/healthy-food.jpg"
 
 const NutritionPage: React.FC = () => {
-  const { addFood, getTodaysTotals, goals } = useNutrition()
+  const { addFood, getTodaysTotals, goals, dailyFoods, loadTodaysFoods, isLoading } = useNutrition()
+  const { user } = useAuth()
   const [scanResult, setScanResult] = useState<any>(null)
   const [portionSize, setPortionSize] = useState(100)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Get today's totals from the store
   const todaysTotals = getTodaysTotals()
+
+  useEffect(() => {
+    if (user) {
+      loadTodaysFoods()
+    }
+  }, [user, loadTodaysFoods])
   const dailyGoals = {
     calories: { current: todaysTotals.calories, target: goals.calories },
     protein: { current: todaysTotals.protein, target: goals.protein },
@@ -126,18 +135,24 @@ const NutritionPage: React.FC = () => {
 
   const adjustedResult = adjustCalories(portionSize)
 
-  const handleAddToDiary = () => {
+  const handleAddToDiary = async () => {
     if (adjustedResult) {
-      addFood({
-        name: adjustedResult.foodName,
-        calories: adjustedResult.calories,
-        protein: adjustedResult.macros.protein,
-        carbs: adjustedResult.macros.carbs,
-        fat: adjustedResult.macros.fat
-      })
-      toast.success("Food added to diary!")
-      setScanResult(null)
-      setPortionSize(100)
+      try {
+        await addFood({
+          food_name: adjustedResult.foodName,
+          calories: adjustedResult.calories,
+          protein: adjustedResult.macros.protein,
+          carbs: adjustedResult.macros.carbs,
+          fat: adjustedResult.macros.fat,
+          portion_size: `${portionSize}% of standard portion`
+        })
+        toast.success("Food added to diary!")
+        setScanResult(null)
+        setPortionSize(100)
+      } catch (error) {
+        toast.error("Failed to add food to diary")
+        console.error('Error adding food:', error)
+      }
     }
   }
 
@@ -283,23 +298,31 @@ const NutritionPage: React.FC = () => {
               
               <FitnessCardContent>
                 <div className="space-y-4">
-                  {recentMeals.map((meal, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 rounded-lg border border-border">
-                      <div className="flex items-center gap-3">
-                        <div className="text-2xl">{meal.image}</div>
-                        <div>
-                          <p className="font-medium">{meal.name}</p>
-                          <p className="text-sm text-muted-foreground">{meal.time}</p>
+                  {isLoading ? (
+                    <p className="text-muted-foreground text-center py-4">Loading meals...</p>
+                  ) : dailyFoods.length > 0 ? (
+                    dailyFoods.slice(0, 5).map((food) => (
+                      <div key={food.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
+                        <div className="flex items-center gap-3">
+                          <div className="text-2xl">🍽️</div>
+                          <div>
+                            <p className="font-medium">{food.food_name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(food.created_at).toLocaleTimeString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold">{food.calories} cal</p>
+                          <FitnessButton variant="ghost" size="sm" className="text-xs">
+                            Edit
+                          </FitnessButton>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold">{meal.calories} cal</p>
-                        <FitnessButton variant="ghost" size="sm" className="text-xs">
-                          Edit
-                        </FitnessButton>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-muted-foreground text-center py-4">No meals logged today</p>
+                  )}
                 </div>
               </FitnessCardContent>
             </FitnessCard>
