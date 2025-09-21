@@ -70,6 +70,13 @@ const Dashboard: React.FC = () => {
       icon: UtensilsCrossed,
       href: "/nutrition",
       variant: "food" as const
+    },
+    {
+      title: "View Progress",
+      description: "Check your fitness journey",
+      icon: TrendingUp,
+      href: "/progress",
+      variant: "gradient" as const
     }
   ]
 
@@ -188,7 +195,7 @@ const Dashboard: React.FC = () => {
             {/* Quick Actions */}
             <div className="animate-slide-up" style={{ animationDelay: "400ms" }}>
               <h2 className="text-heading-sm mb-4">Quick Actions</h2>
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {quickActions.map((action, index) => {
                   const Icon = action.icon
                   return (
@@ -218,44 +225,6 @@ const Dashboard: React.FC = () => {
                   )
                 })}
               </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="animate-slide-up" style={{ animationDelay: "600ms" }}>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-heading-sm">Recent Workouts</h2>
-                <FitnessButton asChild variant="ghost" size="sm">
-                  <Link to="/progress">View All</Link>
-                </FitnessButton>
-              </div>
-              
-              <FitnessCard>
-                <FitnessCardContent className="space-y-4">
-                  {recentWorkouts.map((workout, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-primary rounded-full" />
-                        <div>
-                          <p className="font-medium text-sm">{workout.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {workout.date} • {workout.duration}
-                          </p>
-                        </div>
-                      </div>
-                      <Badge variant="outline" className="text-xs">
-                        Completed
-                      </Badge>
-                    </div>
-                  ))}
-                  
-                  <FitnessButton asChild variant="ghost" className="w-full mt-4">
-                    <Link to="/progress">
-                      <TrendingUp className="w-4 h-4" />
-                      View Progress
-                    </Link>
-                  </FitnessButton>
-                </FitnessCardContent>
-              </FitnessCard>
             </div>
           </div>
 
