@@ -28,8 +28,6 @@ const Header: React.FC = () => {
           <span className="font-heading font-bold text-xl">FitTracker</span>
         </Link>
 
-        {/* Desktop Navigation */}
-        <Navigation className="flex-1 justify-center" />
 
 
         {/* User Actions */}
@@ -75,8 +73,8 @@ const Header: React.FC = () => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Mobile Navigation */}
-          <Navigation />
+          {/* Navigation */}
+          <Navigation className="flex-1 justify-center" />
 
         </div>
       </div>
