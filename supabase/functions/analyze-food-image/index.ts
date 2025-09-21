@@ -45,7 +45,9 @@ serve(async (req) => {
             - Accurate portion sizes for Indian meals
             - Consider typical Indian cooking methods (fried, steamed, grilled)
             
-            Respond ONLY with valid JSON in this exact format:
+            Return ONLY raw JSON without any markdown formatting or code blocks. The response must be valid JSON that can be parsed directly.
+            
+            Format:
             {
               "foodName": "Name of the food dish (use proper Indian names when applicable)",
               "calories": number (realistic for Indian cooking methods),
@@ -97,8 +99,18 @@ serve(async (req) => {
     console.log('OpenAI response:', content);
 
     try {
+      // Clean the response by removing markdown code blocks if present
+      let cleanContent = content.trim();
+      if (cleanContent.startsWith('```json')) {
+        cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      } else if (cleanContent.startsWith('```')) {
+        cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      }
+      
+      console.log('Cleaned content for parsing:', cleanContent);
+      
       // Parse the JSON response from OpenAI
-      const nutritionData = JSON.parse(content);
+      const nutritionData = JSON.parse(cleanContent);
       
       // Validate the response structure
       if (!nutritionData.foodName || !nutritionData.calories || !nutritionData.macros) {
@@ -111,6 +123,7 @@ serve(async (req) => {
     } catch (parseError) {
       console.error('Failed to parse OpenAI response:', parseError);
       console.error('Raw content:', content);
+      console.error('Attempted to parse:', content.trim());
       
       // Fallback response if parsing fails
       return new Response(JSON.stringify({
