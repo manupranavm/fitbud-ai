@@ -69,15 +69,43 @@ const NutritionPage: React.FC = () => {
     portion: "1 serving (200g)"
   }
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      toast.success("Food image uploaded! Analyzing...")
-      // Simulate food recognition
-      setTimeout(() => {
-        setScanResult(mockScanResult)
-        toast.success("Food identified! Adjust portion size if needed.")
-      }, 1500)
+      try {
+        toast.success("Food image uploaded! Analyzing...")
+        
+        // Convert file to base64
+        const reader = new FileReader()
+        reader.onload = async (e) => {
+          const base64Data = e.target?.result as string
+          
+          try {
+            // Call the edge function
+            const { supabase } = await import("@/integrations/supabase/client")
+            const { data, error } = await supabase.functions.invoke('analyze-food-image', {
+              body: { imageBase64: base64Data }
+            })
+            
+            if (error) {
+              console.error('Error analyzing food:', error)
+              toast.error("Failed to analyze food image. Please try again.")
+              return
+            }
+            
+            setScanResult(data)
+            toast.success("Food identified! Adjust portion size if needed.")
+          } catch (err) {
+            console.error('Error calling food analysis:', err)
+            toast.error("Failed to analyze food image. Please try again.")
+          }
+        }
+        
+        reader.readAsDataURL(file)
+      } catch (err) {
+        console.error('Error processing file:', err)
+        toast.error("Failed to process image. Please try again.")
+      }
     }
   }
 
