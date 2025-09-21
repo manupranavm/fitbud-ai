@@ -26,7 +26,7 @@ const SettingsPage: React.FC = () => {
   const { user, updateProfile, logout } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
   const [profileData, setProfileData] = useState({
-    name: user?.name || "John Doe",
+    name: user?.user_metadata?.full_name || "John Doe",
     email: user?.email || "john@example.com",
     height: "5'10\"",
     weight: "175",
@@ -49,10 +49,9 @@ const SettingsPage: React.FC = () => {
 
   const handleSaveProfile = () => {
     setIsEditing(false)
-    updateProfile({ 
-      name: profileData.name, 
-      email: profileData.email 
-    })
+      updateProfile({
+        email: profileData.email
+      })
     toast.success("Profile updated successfully!")
   }
 

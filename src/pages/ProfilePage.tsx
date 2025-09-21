@@ -14,7 +14,7 @@ const ProfilePage: React.FC = () => {
   const { user, updateProfile } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
-    name: user?.name || '',
+    name: user?.user_metadata?.full_name || '',
     email: user?.email || '',
     height: '175',
     weight: '70',
@@ -25,7 +25,6 @@ const ProfilePage: React.FC = () => {
   const handleSave = async () => {
     try {
       await updateProfile({
-        name: formData.name,
         email: formData.email
       })
       setIsEditing(false)
@@ -37,7 +36,7 @@ const ProfilePage: React.FC = () => {
 
   const handleCancel = () => {
     setFormData({
-      name: user?.name || '',
+      name: user?.user_metadata?.full_name || '',
       email: user?.email || '',
       height: '175',
       weight: '70',
@@ -108,7 +107,7 @@ const ProfilePage: React.FC = () => {
               </div>
             ) : (
               <>
-                <h2 className="text-xl font-heading font-semibold mb-2">{user?.name || 'User'}</h2>
+                <h2 className="text-xl font-heading font-semibold mb-2">{user?.user_metadata?.full_name || user?.email || 'User'}</h2>
                 <p className="text-muted-foreground flex items-center gap-2 mb-4">
                   <Mail className="w-4 h-4" />
                   {user?.email || 'user@example.com'}

@@ -84,7 +84,7 @@ const Dashboard: React.FC = () => {
     <main className="container mx-auto px-4 py-6 max-w-7xl">
       {/* Welcome Section */}
       <div className="mb-8 animate-fade-in">
-        <h1 className="text-heading-lg mb-2">Welcome back, {user?.name || 'User'}! </h1>
+        <h1 className="text-heading-lg mb-2">Welcome back, {user?.user_metadata?.full_name || user?.email || 'User'}! </h1>
         <p className="text-muted-foreground">
           You're {todayStats.workoutProgress}% through today's workout. Keep pushing!
         </p>
