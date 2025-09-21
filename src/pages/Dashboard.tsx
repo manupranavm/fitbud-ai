@@ -15,7 +15,7 @@ import {
 import { useAuth } from "@/hooks/useAuth"
 import { useWorkout } from "@/hooks/useWorkout"
 import { useNutrition } from "@/hooks/useNutrition"
-import { Header } from "@/components/layout/header"
+
 import { FitnessButton } from "@/components/ui/fitness-button"
 import { FitnessCard, FitnessCardContent, FitnessCardDescription, FitnessCardHeader, FitnessCardTitle } from "@/components/ui/fitness-card"
 import { ProgressRing } from "@/components/ui/progress-ring"
@@ -74,17 +74,14 @@ const Dashboard: React.FC = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
-      <main className="container mx-auto px-4 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8 animate-fade-in">
-          <h1 className="text-heading-lg mb-2">Welcome back, {user?.name || 'User'}! 💪</h1>
-          <p className="text-muted-foreground">
-            You're {todayStats.workoutProgress}% through today's workout. Keep pushing!
-          </p>
-        </div>
+    <main className="container mx-auto px-4 py-6 max-w-7xl">
+      {/* Welcome Section */}
+      <div className="mb-8 animate-fade-in">
+        <h1 className="text-heading-lg mb-2">Welcome back, {user?.name || 'User'}! 💪</h1>
+        <p className="text-muted-foreground">
+          You're {todayStats.workoutProgress}% through today's workout. Keep pushing!
+        </p>
+      </div>
 
         {/* Today's Overview */}
         <div className="grid lg:grid-cols-4 md:grid-cols-2 gap-6 mb-8">
@@ -333,8 +330,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+    </main>
   )
 }
 
