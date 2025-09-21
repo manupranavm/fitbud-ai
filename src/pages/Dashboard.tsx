@@ -202,21 +202,17 @@ const Dashboard: React.FC = () => {
                     <FitnessCard 
                       key={index}
                       variant={action.variant}
-                      className="cursor-pointer group"
+                      className="cursor-pointer group h-full hover:scale-[1.02] transition-all duration-200"
                     >
-                      <Link to={action.href} className="block">
-                        <FitnessCardHeader className="pb-3">
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-primary/20 rounded-lg group-hover:bg-primary/30 transition-colors">
-                              <Icon className="w-5 h-5 text-primary" />
-                            </div>
-                            <FitnessCardTitle className="text-base">
-                              {action.title}
-                            </FitnessCardTitle>
+                      <Link to={action.href} className="block h-full">
+                        <FitnessCardContent className="flex flex-col items-center text-center p-6 h-full">
+                          <div className="mb-4 p-3 bg-primary/20 rounded-xl group-hover:bg-primary/30 group-hover:scale-110 transition-all duration-200">
+                            <Icon className="w-6 h-6 text-primary" />
                           </div>
-                        </FitnessCardHeader>
-                        <FitnessCardContent>
-                          <FitnessCardDescription>
+                          <FitnessCardTitle className="text-base mb-2 font-semibold">
+                            {action.title}
+                          </FitnessCardTitle>
+                          <FitnessCardDescription className="text-sm leading-relaxed">
                             {action.description}
                           </FitnessCardDescription>
                         </FitnessCardContent>
