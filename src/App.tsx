@@ -8,6 +8,7 @@ import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
 import Dashboard from "./pages/Dashboard";
 import WorkoutPage from "./pages/WorkoutPage";
+import WorkoutSessionPage from "./pages/WorkoutSessionPage";
 import FormCheckPage from "./pages/FormCheckPage";
 import NutritionPage from "./pages/NutritionPage";
 import ProgressPage from "./pages/ProgressPage";
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/signup" element={<AuthPage type="signup" />} />
             <Route path="/dashboard" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />
             <Route path="/workout" element={<ProtectedRoute><AppLayout><WorkoutPage /></AppLayout></ProtectedRoute>} />
+            <Route path="/workout/session/:workoutId" element={<ProtectedRoute><WorkoutSessionPage /></ProtectedRoute>} />
             <Route path="/form-check" element={<ProtectedRoute><AppLayout><FormCheckPage /></AppLayout></ProtectedRoute>} />
             <Route path="/nutrition" element={<ProtectedRoute><AppLayout><NutritionPage /></AppLayout></ProtectedRoute>} />
             <Route path="/progress" element={<ProtectedRoute><AppLayout><ProgressPage /></AppLayout></ProtectedRoute>} />

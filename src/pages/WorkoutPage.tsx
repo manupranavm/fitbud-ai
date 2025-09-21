@@ -221,7 +221,7 @@ const WorkoutPage: React.FC = () => {
 
                 <div className="flex gap-3">
                   <FitnessButton asChild className="flex-1" size="lg">
-                    <Link to="/workout/start">
+                    <Link to="/workout/session/today">
                       <Play className="w-4 h-4" />
                       Continue Workout
                     </Link>
@@ -292,7 +292,7 @@ const WorkoutPage: React.FC = () => {
                     
                     <div className="flex gap-2">
                       <FitnessButton asChild className="flex-1">
-                        <Link to={`/workout/plan/${plan.id}`}>
+                        <Link to={`/workout/session/${plan.id}`}>
                           Start Workout
                         </Link>
                       </FitnessButton>
