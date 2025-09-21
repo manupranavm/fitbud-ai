@@ -15,7 +15,7 @@ interface AuthPageProps {
 }
 
 const AuthPage: React.FC<AuthPageProps> = ({ type }) => {
-  const { login, loginWithGoogle, signup, isLoading } = useAuth()
+  const { login, signup, isLoading } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
@@ -47,15 +47,6 @@ const AuthPage: React.FC<AuthPageProps> = ({ type }) => {
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Authentication failed")
-    }
-  }
-
-  const handleGoogleLogin = async () => {
-    try {
-      await loginWithGoogle()
-      toast.success("Signed in with Google!")
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Google login failed")
     }
   }
 
@@ -191,12 +182,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ type }) => {
                   </div>
                 </div>
 
-                <FitnessButton 
-                  variant="outline" 
-                  className="w-full mt-4" 
-                  onClick={handleGoogleLogin}
-                  disabled={isLoading}
-                >
+                <FitnessButton variant="outline" className="w-full mt-4">
                   <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
                     <path
                       fill="currentColor"
