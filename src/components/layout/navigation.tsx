@@ -42,7 +42,7 @@ const Navigation: React.FC<NavigationProps> = ({ className }) => {
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className={cn("hidden lg:flex items-center space-x-1", className)}>
+      <nav className={cn("hidden lg:flex items-center justify-center space-x-2", className)}>
         {navigationItems.map((item) => {
           const Icon = item.icon
           const active = isActive(item.href)
@@ -52,14 +52,14 @@ const Navigation: React.FC<NavigationProps> = ({ className }) => {
               key={item.href}
               to={item.href}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors",
+                "flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors min-w-[120px]",
                 active 
                   ? "bg-primary text-primary-foreground" 
                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
               )}
             >
-              <Icon className="w-4 h-4" />
-              {item.label}
+              <Icon className="w-4 h-4 flex-shrink-0" />
+              <span className="text-center">{item.label}</span>
             </Link>
           )
         })}
@@ -92,14 +92,14 @@ const Navigation: React.FC<NavigationProps> = ({ className }) => {
                     to={item.href}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-colors w-full",
+                      "flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-colors w-full text-left",
                       active 
                         ? "bg-primary text-primary-foreground" 
                         : "text-muted-foreground hover:text-foreground hover:bg-muted"
                     )}
                   >
-                    <Icon className="w-5 h-5" />
-                    {item.label}
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    <span className="flex-1">{item.label}</span>
                   </Link>
                 )
               })}
