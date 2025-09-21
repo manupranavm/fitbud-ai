@@ -13,6 +13,7 @@ interface AuthState {
   isAuthenticated: boolean
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
+  loginWithGoogle: () => Promise<void>
   signup: (name: string, email: string, password: string) => Promise<void>
   logout: () => void
   updateProfile: (data: Partial<User>) => void
@@ -45,6 +46,29 @@ export const useAuth = create<AuthState>()(
         } catch (error) {
           set({ isLoading: false })
           throw new Error('Invalid credentials')
+        }
+      },
+
+      loginWithGoogle: async () => {
+        set({ isLoading: true })
+        try {
+          // Simulate Google OAuth
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          
+          const user: User = {
+            id: '1',
+            name: 'Google User',
+            email: 'user@gmail.com',
+            avatar: '/placeholder-avatar.jpg'
+          }
+          
+          set({ user, isAuthenticated: true, isLoading: false })
+          
+          // Redirect to dashboard after successful login
+          window.location.href = '/dashboard'
+        } catch (error) {
+          set({ isLoading: false })
+          throw new Error('Google login failed')
         }
       },
 
