@@ -45,8 +45,8 @@ export const useNutrition = create<NutritionState>()((set, get) => ({
   isLoading: false,
 
   addFood: async (foodData) => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
+    // Use mock auth system instead of Supabase auth
+    const mockUserId = '1' // Use the same mock user ID from useAuth.ts
 
     set({ isLoading: true })
     
@@ -54,7 +54,7 @@ export const useNutrition = create<NutritionState>()((set, get) => ({
       const { data, error } = await supabase
         .from('food_entries')
         .insert({
-          user_id: user.id,
+          user_id: mockUserId,
           food_name: foodData.food_name,
           calories: foodData.calories,
           protein: foodData.protein,
@@ -110,8 +110,8 @@ export const useNutrition = create<NutritionState>()((set, get) => ({
   },
 
   loadTodaysFoods: async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    // Use mock auth system
+    const mockUserId = '1'
 
     set({ isLoading: true })
     
@@ -120,7 +120,7 @@ export const useNutrition = create<NutritionState>()((set, get) => ({
       const { data, error } = await supabase
         .from('food_entries')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', mockUserId)
         .eq('logged_date', today)
         .order('created_at', { ascending: false })
 
@@ -151,8 +151,8 @@ export const useNutrition = create<NutritionState>()((set, get) => ({
   },
 
   clearDay: async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    // Use mock auth system
+    const mockUserId = '1'
 
     set({ isLoading: true })
     
@@ -161,7 +161,7 @@ export const useNutrition = create<NutritionState>()((set, get) => ({
       const { error } = await supabase
         .from('food_entries')
         .delete()
-        .eq('user_id', user.id)
+        .eq('user_id', mockUserId)
         .eq('logged_date', today)
 
       if (error) throw error
