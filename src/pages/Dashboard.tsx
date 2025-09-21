@@ -307,27 +307,6 @@ const Dashboard: React.FC = () => {
               </FitnessCard>
             </div>
 
-            {/* Nutrition Quick Add */}
-            <div className="animate-slide-up" style={{ animationDelay: "700ms" }}>
-              <h2 className="text-heading-sm mb-4">Quick Add</h2>
-              <FitnessCard variant="food">
-                <FitnessCardContent className="space-y-3">
-                  <FitnessButton asChild variant="outline" className="w-full">
-                    <Link to="/nutrition/scan">
-                      <Camera className="w-4 h-4" />
-                      Scan Meal
-                    </Link>
-                  </FitnessButton>
-                  
-                  <FitnessButton asChild variant="ghost" className="w-full">
-                    <Link to="/nutrition/add">
-                      <Plus className="w-4 h-4" />
-                      Add Manually
-                    </Link>
-                  </FitnessButton>
-                </FitnessCardContent>
-              </FitnessCard>
-            </div>
           </div>
         </div>
     </main>
