@@ -99,20 +99,21 @@ const NutritionPage: React.FC = () => {
     }
   }
 
-  const adjustCalories = (newPortion: number) => {
-    if (!scanResult) return scanResult
-    
-    const multiplier = newPortion / 100
-    return {
-      ...scanResult,
-      calories: Math.round(mockScanResult.calories * multiplier),
-      macros: {
-        protein: Math.round(mockScanResult.macros.protein * multiplier),
-        carbs: Math.round(mockScanResult.macros.carbs * multiplier),
-        fat: Math.round(mockScanResult.macros.fat * multiplier)
-      }
+const adjustCalories = (newPortion: number) => {
+  if (!scanResult) return null;
+
+  const multiplier = newPortion / 100;
+  return {
+    ...scanResult,
+    calories: Math.round(scanResult.calories * multiplier),
+    macros: {
+      protein: Math.round(scanResult.macros.protein * multiplier),
+      carbs: Math.round(scanResult.macros.carbs * multiplier),
+      fat: Math.round(scanResult.macros.fat * multiplier),
     }
   }
+}
+
 
   const adjustedResult = adjustCalories(portionSize)
 
