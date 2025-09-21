@@ -10,7 +10,7 @@ import {
   Pause,
   StopCircle
 } from "lucide-react"
-import { Header } from "@/components/layout/header"
+
 import { FitnessButton } from "@/components/ui/fitness-button"
 import { FitnessCard, FitnessCardContent, FitnessCardDescription, FitnessCardHeader, FitnessCardTitle } from "@/components/ui/fitness-card"
 import { VideoPlayer } from "@/components/ui/video-player"
@@ -96,7 +96,7 @@ const FormCheckPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      
       
       <main className="container mx-auto px-4 py-8">
         {/* Hero Section */}

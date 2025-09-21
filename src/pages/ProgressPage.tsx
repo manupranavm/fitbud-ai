@@ -7,7 +7,7 @@ import {
   ChevronDown,
   Filter
 } from "lucide-react"
-import { Header } from "@/components/layout/header"
+
 import { FitnessButton } from "@/components/ui/fitness-button"
 import { FitnessCard, FitnessCardContent, FitnessCardDescription, FitnessCardHeader, FitnessCardTitle } from "@/components/ui/fitness-card"
 import { ProgressRing } from "@/components/ui/progress-ring"
@@ -51,7 +51,7 @@ const ProgressPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      
       
       <main className="container mx-auto px-4 py-8">
         {/* Header */}

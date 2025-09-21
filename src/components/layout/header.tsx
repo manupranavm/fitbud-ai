@@ -2,6 +2,7 @@ import React from "react"
 import { Link } from "react-router-dom"
 import { Activity, Bell, User } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
+import { Navigation } from "./navigation"
 
 
 import { FitnessButton } from "@/components/ui/fitness-button"
@@ -29,6 +30,8 @@ const Header: React.FC = () => {
         </Link>
 
 
+
+        <Navigation className="flex-1 justify-center" />
 
         {/* User Actions */}
         <div className="flex items-center gap-2">
