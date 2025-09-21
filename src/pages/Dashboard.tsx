@@ -189,90 +189,96 @@ const Dashboard: React.FC = () => {
           </FitnessCard>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Left Column */}
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <div className="animate-slide-up" style={{ animationDelay: "400ms" }}>
-              <h2 className="text-heading-sm mb-4">Quick Actions</h2>
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {quickActions.map((action, index) => {
-                  const Icon = action.icon
-                  return (
-                    <FitnessCard 
-                      key={index}
-                      variant={action.variant}
-                      className="cursor-pointer group h-full hover:scale-[1.02] transition-all duration-200"
-                    >
-                      <Link to={action.href} className="block h-full">
-                        <FitnessCardContent className="flex flex-col items-center text-center p-6 h-full">
-                          <div className="mb-4 p-3 bg-primary/20 rounded-xl group-hover:bg-primary/30 group-hover:scale-110 transition-all duration-200">
-                            <Icon className="w-6 h-6 text-primary" />
-                          </div>
-                          <FitnessCardTitle className="text-base mb-2 font-semibold">
-                            {action.title}
-                          </FitnessCardTitle>
-                          <FitnessCardDescription className="text-sm leading-relaxed">
-                            {action.description}
-                          </FitnessCardDescription>
-                        </FitnessCardContent>
-                      </Link>
-                    </FitnessCard>
-                  )
-                })}
-              </div>
+        <div className="grid lg:grid-cols-2 gap-8 items-start">
+          {/* Left Column - Quick Actions */}
+          <div className="animate-slide-up" style={{ animationDelay: "400ms" }}>
+            <h2 className="text-heading-sm mb-4">Quick Actions</h2>
+            <div className="grid grid-cols-2 gap-4 h-full">
+              {quickActions.map((action, index) => {
+                const Icon = action.icon
+                return (
+                  <FitnessCard 
+                    key={index}
+                    variant={action.variant}
+                    className="cursor-pointer group hover:scale-[1.02] transition-all duration-200"
+                  >
+                    <Link to={action.href} className="block h-full">
+                      <FitnessCardContent className="flex flex-col items-center text-center p-4">
+                        <div className="mb-3 p-2.5 bg-primary/20 rounded-xl group-hover:bg-primary/30 group-hover:scale-110 transition-all duration-200">
+                          <Icon className="w-5 h-5 text-primary" />
+                        </div>
+                        <FitnessCardTitle className="text-sm mb-1 font-semibold">
+                          {action.title}
+                        </FitnessCardTitle>
+                        <FitnessCardDescription className="text-xs leading-relaxed">
+                          {action.description}
+                        </FitnessCardDescription>
+                      </FitnessCardContent>
+                    </Link>
+                  </FitnessCard>
+                )
+              })}
             </div>
           </div>
 
-          {/* Right Column */}
-          <div className="space-y-6">
-            {/* Today's Workout Preview */}
-            <div className="animate-slide-up" style={{ animationDelay: "500ms" }}>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-heading-sm">Today's Workout</h2>
-                <FitnessButton asChild variant="ghost" size="sm">
-                  <Link to="/workout">View All</Link>
-                </FitnessButton>
-              </div>
-              
-              <FitnessCard variant="workout">
-                <FitnessCardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <FitnessCardTitle>Upper Body Strength</FitnessCardTitle>
-                      <FitnessCardDescription>
-                        6 exercises • 45 minutes • Intermediate
-                      </FitnessCardDescription>
-                    </div>
-                    <FitnessButton size="icon" variant="secondary">
-                      <Play className="w-4 h-4" />
-                    </FitnessButton>
-                  </div>
-                </FitnessCardHeader>
-                <FitnessCardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between py-2 border-l-2 border-primary pl-3">
-                      <span className="text-sm font-medium">Push-ups</span>
-                      <span className="text-sm text-muted-foreground">3 × 12</span>
-                    </div>
-                    <div className="flex items-center justify-between py-2 border-l-2 border-muted pl-3">
-                      <span className="text-sm">Bench Press</span>
-                      <span className="text-sm text-muted-foreground">4 × 8</span>
-                    </div>
-                    <div className="flex items-center justify-between py-2 border-l-2 border-muted pl-3">
-                      <span className="text-sm">Dumbbell Rows</span>
-                      <span className="text-sm text-muted-foreground">3 × 10</span>
-                    </div>
-                  </div>
-                  
-                  <FitnessButton asChild className="w-full mt-4" size="lg">
-                    <Link to="/workout/session/today">
-                      Continue Workout
-                    </Link>
-                  </FitnessButton>
-                </FitnessCardContent>
-              </FitnessCard>
+          {/* Right Column - Today's Workout */}
+          <div className="animate-slide-up" style={{ animationDelay: "500ms" }}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-heading-sm">Today's Workout</h2>
+              <FitnessButton asChild variant="ghost" size="sm">
+                <Link to="/workout">View All</Link>
+              </FitnessButton>
             </div>
+            
+            <FitnessCard variant="workout" className="h-full">
+              <FitnessCardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <FitnessCardTitle>Upper Body Strength</FitnessCardTitle>
+                    <FitnessCardDescription>
+                      6 exercises • 45 minutes • Intermediate
+                    </FitnessCardDescription>
+                  </div>
+                  <FitnessButton size="icon" variant="secondary">
+                    <Play className="w-4 h-4" />
+                  </FitnessButton>
+                </div>
+              </FitnessCardHeader>
+              <FitnessCardContent>
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center justify-between py-2 border-l-2 border-primary pl-3">
+                    <span className="text-sm font-medium">Push-ups</span>
+                    <span className="text-sm text-muted-foreground">3 × 12</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-l-2 border-muted pl-3">
+                    <span className="text-sm">Bench Press</span>
+                    <span className="text-sm text-muted-foreground">4 × 8</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-l-2 border-muted pl-3">
+                    <span className="text-sm">Dumbbell Rows</span>
+                    <span className="text-sm text-muted-foreground">3 × 10</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-l-2 border-muted pl-3">
+                    <span className="text-sm">Shoulder Press</span>
+                    <span className="text-sm text-muted-foreground">3 × 10</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-l-2 border-muted pl-3">
+                    <span className="text-sm">Tricep Dips</span>
+                    <span className="text-sm text-muted-foreground">3 × 15</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-l-2 border-muted pl-3">
+                    <span className="text-sm">Pull-ups</span>
+                    <span className="text-sm text-muted-foreground">3 × 8</span>
+                  </div>
+                </div>
+                
+                <FitnessButton asChild className="w-full" size="lg">
+                  <Link to="/workout/session/today">
+                    Continue Workout
+                  </Link>
+                </FitnessButton>
+              </FitnessCardContent>
+            </FitnessCard>
           </div>
         </div>
     </main>
