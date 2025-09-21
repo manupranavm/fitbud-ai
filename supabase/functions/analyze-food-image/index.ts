@@ -1,7 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const spoonacularApiKey = Deno.env.get('SPOONACULAR_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,100 +24,97 @@ serve(async (req) => {
       });
     }
 
-    console.log('Analyzing food image with OpenAI Vision API');
+    console.log('Analyzing food image with Spoonacular API');
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Convert base64 to blob for Spoonacular
+    const base64Data = imageBase64.split(',')[1];
+    const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+    
+    // Create form data for image upload
+    const formData = new FormData();
+    const blob = new Blob([binaryData], { type: 'image/jpeg' });
+    formData.append('file', blob, 'food.jpg');
+
+    // First, classify the food using Spoonacular's classify endpoint
+    const classifyResponse = await fetch(`https://api.spoonacular.com/food/images/classify?apiKey=${spoonacularApiKey}`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a nutrition expert. Analyze food images and provide detailed nutritional information. 
-            
-            Respond ONLY with valid JSON in this exact format:
-            {
-              "foodName": "Name of the food dish",
-              "calories": number,
-              "macros": {
-                "protein": number,
-                "carbs": number,
-                "fat": number
-              },
-              "confidence": number (1-100),
-              "portion": "estimated serving size description",
-              "ingredients": ["list", "of", "main", "ingredients"]
-            }
-            
-            Base your analysis on standard serving sizes. Be as accurate as possible with nutritional values.`
-          },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: 'Analyze this food image and provide the nutritional information in the specified JSON format.'
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: imageBase64
-                }
-              }
-            ]
-          }
-        ],
-        max_tokens: 500,
-        temperature: 0.1
-      }),
+      body: formData,
     });
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('OpenAI API error:', error);
-      return new Response(JSON.stringify({ error: 'Failed to analyze image' }), {
+    if (!classifyResponse.ok) {
+      const error = await classifyResponse.text();
+      console.error('Spoonacular classify error:', error);
+      return new Response(JSON.stringify({ error: 'Failed to classify image' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const data = await response.json();
-    const content = data.choices[0].message.content;
-    
-    console.log('OpenAI response:', content);
+    const classifyData = await classifyResponse.json();
+    console.log('Spoonacular classify response:', classifyData);
 
-    try {
-      // Parse the JSON response from OpenAI
-      const nutritionData = JSON.parse(content);
-      
-      // Validate the response structure
-      if (!nutritionData.foodName || !nutritionData.calories || !nutritionData.macros) {
-        throw new Error('Invalid nutrition data structure');
+    // Get the top classified food category
+    const topCategory = classifyData.category;
+    const confidence = Math.round(classifyData.probability * 100);
+
+    // Search for nutritional information based on the classified food
+    const searchResponse = await fetch(
+      `https://api.spoonacular.com/food/ingredients/search?query=${encodeURIComponent(topCategory)}&number=1&apiKey=${spoonacularApiKey}`
+    );
+
+    let nutritionData = {
+      foodName: topCategory || "Unknown Food",
+      calories: 200,
+      macros: { protein: 10, carbs: 20, fat: 8 },
+      confidence: confidence || 50,
+      portion: "1 serving",
+      ingredients: [topCategory || "unknown"]
+    };
+
+    if (searchResponse.ok) {
+      const searchData = await searchResponse.json();
+      console.log('Spoonacular search response:', searchData);
+
+      if (searchData.results && searchData.results.length > 0) {
+        const ingredient = searchData.results[0];
+        
+        // Get detailed nutrition information
+        const nutritionResponse = await fetch(
+          `https://api.spoonacular.com/food/ingredients/${ingredient.id}/information?amount=100&unit=grams&apiKey=${spoonacularApiKey}`
+        );
+
+        if (nutritionResponse.ok) {
+          const nutrition = await nutritionResponse.json();
+          console.log('Spoonacular nutrition response:', nutrition);
+
+          if (nutrition.nutrition && nutrition.nutrition.nutrients) {
+            const nutrients = nutrition.nutrition.nutrients;
+            
+            const caloriesNutrient = nutrients.find(n => n.name === 'Calories');
+            const proteinNutrient = nutrients.find(n => n.name === 'Protein');
+            const carbsNutrient = nutrients.find(n => n.name === 'Carbohydrates');
+            const fatNutrient = nutrients.find(n => n.name === 'Fat');
+
+            nutritionData = {
+              foodName: nutrition.name || topCategory,
+              calories: Math.round(caloriesNutrient?.amount || 200),
+              macros: {
+                protein: Math.round(proteinNutrient?.amount || 10),
+                carbs: Math.round(carbsNutrient?.amount || 20),
+                fat: Math.round(fatNutrient?.amount || 8)
+              },
+              confidence: confidence,
+              portion: "100 grams",
+              ingredients: [nutrition.name || topCategory]
+            };
+          }
+        }
       }
-
-      return new Response(JSON.stringify(nutritionData), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    } catch (parseError) {
-      console.error('Failed to parse OpenAI response:', parseError);
-      console.error('Raw content:', content);
-      
-      // Fallback response if parsing fails
-      return new Response(JSON.stringify({
-        foodName: "Unknown Food",
-        calories: 200,
-        macros: { protein: 10, carbs: 20, fat: 8 },
-        confidence: 50,
-        portion: "1 serving",
-        ingredients: ["unknown"]
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
     }
+
+    return new Response(JSON.stringify(nutritionData), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
 
   } catch (error) {
     console.error('Error in analyze-food-image function:', error);
