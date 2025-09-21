@@ -1,7 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const spoonacularApiKey = Deno.env.get('SPOONACULAR_API_KEY');
+const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,97 +24,106 @@ serve(async (req) => {
       });
     }
 
-    console.log('Analyzing food image with Spoonacular API');
+    console.log('Analyzing food image with OpenAI Vision API optimized for Indian cuisine');
 
-    // Convert base64 to blob for Spoonacular
-    const base64Data = imageBase64.split(',')[1];
-    const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
-    
-    // Create form data for image upload
-    const formData = new FormData();
-    const blob = new Blob([binaryData], { type: 'image/jpeg' });
-    formData.append('file', blob, 'food.jpg');
-
-    // First, classify the food using Spoonacular's classify endpoint
-    const classifyResponse = await fetch(`https://api.spoonacular.com/food/images/classify?apiKey=${spoonacularApiKey}`, {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
-      body: formData,
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a nutrition expert specializing in Indian, South Asian, and international cuisines. Analyze food images and provide detailed nutritional information with special attention to:
+
+            - Indian dishes (dal, curry, roti, rice, sabzi, etc.)
+            - Regional variations and cooking methods
+            - Traditional ingredients like turmeric, ghee, coconut oil
+            - Accurate portion sizes for Indian meals
+            - Consider typical Indian cooking methods (fried, steamed, grilled)
+            
+            Respond ONLY with valid JSON in this exact format:
+            {
+              "foodName": "Name of the food dish (use proper Indian names when applicable)",
+              "calories": number (realistic for Indian cooking methods),
+              "macros": {
+                "protein": number (in grams),
+                "carbs": number (in grams),
+                "fat": number (in grams)
+              },
+              "confidence": number (1-100, be conservative for complex dishes),
+              "portion": "estimated serving size (use Indian serving sizes)",
+              "ingredients": ["list", "of", "main", "ingredients", "in", "dish"]
+            }
+            
+            Be accurate with Indian food calories - they tend to be higher due to oil/ghee usage.`
+          },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: 'Analyze this food image and provide nutritional information. Pay special attention if this is an Indian or South Asian dish. Provide realistic calorie counts considering typical cooking methods.'
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: imageBase64
+                }
+              }
+            ]
+          }
+        ],
+        max_tokens: 500,
+        temperature: 0.1
+      }),
     });
 
-    if (!classifyResponse.ok) {
-      const error = await classifyResponse.text();
-      console.error('Spoonacular classify error:', error);
-      return new Response(JSON.stringify({ error: 'Failed to classify image' }), {
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('OpenAI API error:', error);
+      return new Response(JSON.stringify({ error: 'Failed to analyze image' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const classifyData = await classifyResponse.json();
-    console.log('Spoonacular classify response:', classifyData);
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+    
+    console.log('OpenAI response:', content);
 
-    // Get the top classified food category
-    const topCategory = classifyData.category;
-    const confidence = Math.round(classifyData.probability * 100);
-
-    // Search for nutritional information based on the classified food
-    const searchResponse = await fetch(
-      `https://api.spoonacular.com/food/ingredients/search?query=${encodeURIComponent(topCategory)}&number=1&apiKey=${spoonacularApiKey}`
-    );
-
-    let nutritionData = {
-      foodName: topCategory || "Unknown Food",
-      calories: 200,
-      macros: { protein: 10, carbs: 20, fat: 8 },
-      confidence: confidence || 50,
-      portion: "1 serving",
-      ingredients: [topCategory || "unknown"]
-    };
-
-    if (searchResponse.ok) {
-      const searchData = await searchResponse.json();
-      console.log('Spoonacular search response:', searchData);
-
-      if (searchData.results && searchData.results.length > 0) {
-        const ingredient = searchData.results[0];
-        
-        // Get detailed nutrition information
-        const nutritionResponse = await fetch(
-          `https://api.spoonacular.com/food/ingredients/${ingredient.id}/information?amount=100&unit=grams&apiKey=${spoonacularApiKey}`
-        );
-
-        if (nutritionResponse.ok) {
-          const nutrition = await nutritionResponse.json();
-          console.log('Spoonacular nutrition response:', nutrition);
-
-          if (nutrition.nutrition && nutrition.nutrition.nutrients) {
-            const nutrients = nutrition.nutrition.nutrients;
-            
-            const caloriesNutrient = nutrients.find(n => n.name === 'Calories');
-            const proteinNutrient = nutrients.find(n => n.name === 'Protein');
-            const carbsNutrient = nutrients.find(n => n.name === 'Carbohydrates');
-            const fatNutrient = nutrients.find(n => n.name === 'Fat');
-
-            nutritionData = {
-              foodName: nutrition.name || topCategory,
-              calories: Math.round(caloriesNutrient?.amount || 200),
-              macros: {
-                protein: Math.round(proteinNutrient?.amount || 10),
-                carbs: Math.round(carbsNutrient?.amount || 20),
-                fat: Math.round(fatNutrient?.amount || 8)
-              },
-              confidence: confidence,
-              portion: "100 grams",
-              ingredients: [nutrition.name || topCategory]
-            };
-          }
-        }
+    try {
+      // Parse the JSON response from OpenAI
+      const nutritionData = JSON.parse(content);
+      
+      // Validate the response structure
+      if (!nutritionData.foodName || !nutritionData.calories || !nutritionData.macros) {
+        throw new Error('Invalid nutrition data structure');
       }
-    }
 
-    return new Response(JSON.stringify(nutritionData), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+      return new Response(JSON.stringify(nutritionData), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (parseError) {
+      console.error('Failed to parse OpenAI response:', parseError);
+      console.error('Raw content:', content);
+      
+      // Fallback response if parsing fails
+      return new Response(JSON.stringify({
+        foodName: "Unknown Food",
+        calories: 200,
+        macros: { protein: 10, carbs: 20, fat: 8 },
+        confidence: 50,
+        portion: "1 serving",
+        ingredients: ["unknown"]
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
   } catch (error) {
     console.error('Error in analyze-food-image function:', error);
