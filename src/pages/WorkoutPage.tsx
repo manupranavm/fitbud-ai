@@ -296,8 +296,10 @@ const WorkoutPage: React.FC = () => {
                           Start Workout
                         </Link>
                       </FitnessButton>
-                      <FitnessButton variant="outline" size="icon">
-                        <ChevronRight className="w-4 h-4" />
+                      <FitnessButton asChild variant="outline" size="icon">
+                        <Link to={`/workout/plan/${plan.id}/details`}>
+                          <ChevronRight className="w-4 h-4" />
+                        </Link>
                       </FitnessButton>
                     </div>
                   </FitnessCardContent>
