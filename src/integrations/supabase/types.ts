@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_workout_suggestions: {
+        Row: {
+          ai_prompt: string | null
+          created_at: string
+          difficulty_level: string
+          duration: number
+          equipment: string[] | null
+          exercises: Json
+          id: string
+          updated_at: string
+          user_id: string
+          workout_type: string
+          youtube_videos: Json | null
+        }
+        Insert: {
+          ai_prompt?: string | null
+          created_at?: string
+          difficulty_level: string
+          duration: number
+          equipment?: string[] | null
+          exercises: Json
+          id?: string
+          updated_at?: string
+          user_id: string
+          workout_type: string
+          youtube_videos?: Json | null
+        }
+        Update: {
+          ai_prompt?: string | null
+          created_at?: string
+          difficulty_level?: string
+          duration?: number
+          equipment?: string[] | null
+          exercises?: Json
+          id?: string
+          updated_at?: string
+          user_id?: string
+          workout_type?: string
+          youtube_videos?: Json | null
+        }
+        Relationships: []
+      }
       gym_machines: {
         Row: {
           detected_at: string

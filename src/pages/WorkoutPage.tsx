@@ -9,7 +9,8 @@ import {
   Filter,
   Search,
   CheckCircle2,
-  Circle
+  Circle,
+  Brain
 } from "lucide-react"
 import { Header } from "@/components/layout/header"
 import { FitnessButton } from "@/components/ui/fitness-button"
@@ -18,6 +19,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { VideoPlayer } from "@/components/ui/video-player"
+import { AIWorkoutGenerator } from "@/components/AIWorkoutGenerator"
 import gymImage from "@/assets/gym-workout.jpg"
 
 const WorkoutPage: React.FC = () => {
@@ -144,10 +146,14 @@ const WorkoutPage: React.FC = () => {
         </div>
 
         <Tabs defaultValue="today" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="today">Today's Workout</TabsTrigger>
             <TabsTrigger value="plans">Workout Plans</TabsTrigger>
             <TabsTrigger value="exercises">Exercise Library</TabsTrigger>
+            <TabsTrigger value="ai-generator" className="flex items-center gap-2">
+              <Brain className="h-4 w-4" />
+              AI Generator
+            </TabsTrigger>
           </TabsList>
 
           {/* Today's Workout */}
@@ -354,6 +360,11 @@ const WorkoutPage: React.FC = () => {
                 </FitnessCard>
               ))}
             </div>
+          </TabsContent>
+
+          {/* AI Workout Generator */}
+          <TabsContent value="ai-generator">
+            <AIWorkoutGenerator />
           </TabsContent>
         </Tabs>
       </main>
