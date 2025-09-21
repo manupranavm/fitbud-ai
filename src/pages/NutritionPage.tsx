@@ -45,26 +45,7 @@ const NutritionPage: React.FC = () => {
     fat: { current: todaysTotals.fat, target: goals.fat }
   }
 
-  const recentMeals = [
-    {
-      time: "8:30 AM",
-      name: "Oatmeal with Berries",
-      calories: 320,
-      image: "🥣"
-    },
-    {
-      time: "12:15 PM", 
-      name: "Grilled Chicken Salad",
-      calories: 450,
-      image: "🥗"
-    },
-    {
-      time: "3:45 PM",
-      name: "Greek Yogurt",
-      calories: 150,
-      image: "🥛"
-    }
-  ]
+  // Remove dummy data - using real data from database via dailyFoods
 
   const mockScanResult = {
     foodName: "Grilled Salmon with Quinoa",
@@ -144,11 +125,16 @@ const NutritionPage: React.FC = () => {
           protein: adjustedResult.macros.protein,
           carbs: adjustedResult.macros.carbs,
           fat: adjustedResult.macros.fat,
-          portion_size: `${portionSize}% of standard portion`
+          portion_size: `${portionSize}% of standard portion`,
+          meal_type: 'scanned'
         })
         toast.success("Food added to diary!")
         setScanResult(null)
         setPortionSize(100)
+        // Reset file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
+        }
       } catch (error) {
         toast.error("Failed to add food to diary")
         console.error('Error adding food:', error)
