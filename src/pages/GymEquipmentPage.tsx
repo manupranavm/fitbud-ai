@@ -1,16 +1,16 @@
 import React, { useState, useRef } from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FitnessButton } from "@/components/ui/fitness-button";
+import { FitnessCard, FitnessCardContent, FitnessCardDescription, FitnessCardHeader, FitnessCardTitle } from "@/components/ui/fitness-card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Upload, Camera, Type, Shuffle, Play, Calendar, Clock, RotateCcw, Video, StopCircle } from "lucide-react";
+import { Upload, Camera, Type, Shuffle, Play, Calendar, Clock, RotateCcw, Video, StopCircle, Target, Brain } from "lucide-react";
+import gymImage from "@/assets/gym-workout.jpg";
 
 interface Exercise {
   name: string;
@@ -275,19 +275,19 @@ const GymEquipmentPage = () => {
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty.toLowerCase()) {
-      case 'beginner': return 'bg-green-100 text-green-800';
-      case 'intermediate': return 'bg-yellow-100 text-yellow-800';
-      case 'advanced': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'beginner': return 'bg-success/20 text-success';
+      case 'intermediate': return 'bg-primary/20 text-primary';
+      case 'advanced': return 'bg-secondary/20 text-secondary';
+      default: return 'bg-muted/20 text-muted-foreground';
     }
   };
 
   const renderExercise = (exercise: Exercise, index: number) => (
-    <div key={index} className="p-4 bg-gray-50 rounded-lg space-y-3">
+    <div key={index} className="p-4 bg-muted rounded-lg space-y-3 border border-border hover:bg-muted/50 transition-colors">
       <div className="flex justify-between items-start">
         <div>
           <h4 className="font-semibold text-lg">{exercise.name}</h4>
-          <p className="text-sm text-gray-600">Equipment: {exercise.equipment}</p>
+          <p className="text-sm text-muted-foreground">Equipment: {exercise.equipment}</p>
         </div>
         <Badge className={getDifficultyColor(exercise.difficulty)}>
           {exercise.difficulty}
@@ -297,15 +297,15 @@ const GymEquipmentPage = () => {
       <div className="grid grid-cols-3 gap-4 text-sm">
         <div className="text-center">
           <div className="font-medium">{exercise.sets}</div>
-          <div className="text-gray-500">Sets</div>
+          <div className="text-muted-foreground">Sets</div>
         </div>
         <div className="text-center">
           <div className="font-medium">{exercise.reps}</div>
-          <div className="text-gray-500">Reps</div>
+          <div className="text-muted-foreground">Reps</div>
         </div>
         <div className="text-center">
           <div className="font-medium">{exercise.restTime}</div>
-          <div className="text-gray-500">Rest</div>
+          <div className="text-muted-foreground">Rest</div>
         </div>
       </div>
 
@@ -333,7 +333,7 @@ const GymEquipmentPage = () => {
                 href={`https://www.youtube.com/watch?v=${video.videoId}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex gap-2 p-2 bg-white rounded border hover:shadow-md transition-shadow"
+                className="flex gap-2 p-2 bg-background rounded border hover:shadow-md transition-shadow"
               >
                 <img
                   src={video.thumbnail}
@@ -342,7 +342,7 @@ const GymEquipmentPage = () => {
                 />
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium line-clamp-2">{video.title}</p>
-                  <p className="text-xs text-gray-500">{video.channelTitle}</p>
+                  <p className="text-xs text-muted-foreground">{video.channelTitle}</p>
                 </div>
               </a>
             ))}
@@ -353,92 +353,122 @@ const GymEquipmentPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">{/* Changed background */}
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="text-center space-y-2 mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Gym Equipment Planner</h1>
-          <p className="text-lg text-gray-600">Create personalized workout plans based on your available equipment</p>
-          <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-indigo-600 mx-auto rounded-full"></div>
+    <div className="min-h-screen bg-background">
+      <main className="container mx-auto px-4 py-8">
+        {/* Hero Section */}
+        <div className="relative mb-8 rounded-xl overflow-hidden animate-fade-in">
+          <div 
+            className="h-48 bg-cover bg-center relative"
+            style={{ backgroundImage: `url(${gymImage})` }}
+          >
+            <div className="absolute inset-0 bg-gradient-overlay" />
+            <div className="relative z-10 p-6 flex items-end h-full">
+              <div className="text-white">
+                <h1 className="text-heading-lg mb-2">Gym Equipment Planner</h1>
+                <p className="text-body opacity-90">
+                  Create personalized workout plans based on your available equipment
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-white shadow-lg border border-gray-200">
-            <TabsTrigger value="input" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">Equipment Input</TabsTrigger>
-            <TabsTrigger value="plan" disabled={!workoutPlan} className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">Workout Plan</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="input" className="flex items-center gap-2">
+              <Target className="h-4 w-4" />
+              Equipment Input
+            </TabsTrigger>
+            <TabsTrigger value="plan" disabled={!workoutPlan} className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Workout Plan
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="input" className="space-y-6">
-            <Card className="shadow-lg border-0 bg-white">
-              <CardHeader className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-t-lg">
-                <CardTitle className="text-xl">Plan Details</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
+            {/* Plan Details */}
+            <FitnessCard className="animate-slide-up">
+              <FitnessCardHeader>
+                <FitnessCardTitle>Plan Details</FitnessCardTitle>
+                <FitnessCardDescription>
+                  Set up your personalized workout plan
+                </FitnessCardDescription>
+              </FitnessCardHeader>
+              <FitnessCardContent>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="planName" className="text-gray-700 font-medium">Plan Name</Label>
+                    <Label htmlFor="planName" className="text-foreground">Plan Name</Label>
                     <Input
                       id="planName"
                       value={planName}
                       onChange={(e) => setPlanName(e.target.value)}
                       placeholder="My Gym Plan"
-                      className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                      className="mt-1"
                     />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </FitnessCardContent>
+            </FitnessCard>
 
-            <Card className="shadow-lg border-0 bg-white">
-              <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-t-lg">
-                <CardTitle className="flex items-center gap-2 text-xl">
+            {/* Manual Equipment Input */}
+            <FitnessCard className="animate-slide-up" style={{ animationDelay: "100ms" }}>
+              <FitnessCardHeader>
+                <FitnessCardTitle className="flex items-center gap-2">
                   <Type className="h-5 w-5" />
                   Manual Equipment List
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
+                </FitnessCardTitle>
+                <FitnessCardDescription>
+                  List the equipment available at your gym
+                </FitnessCardDescription>
+              </FitnessCardHeader>
+              <FitnessCardContent>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="equipment" className="text-gray-700 font-medium">Available Equipment</Label>
+                    <Label htmlFor="equipment" className="text-foreground">Available Equipment</Label>
                     <Textarea
                       id="equipment"
                       value={manualEquipment}
                       onChange={(e) => setManualEquipment(e.target.value)}
                       placeholder="Leg Press, Lat Pulldown, Cable Machine, Squat Rack..."
-                      className="min-h-[100px] mt-1 border-gray-300 focus:border-green-500 focus:ring-green-500"
+                      className="min-h-[100px] mt-1"
                     />
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-sm text-muted-foreground mt-2">
                       Separate equipment with commas. Default equipment (dumbbells, barbells, bench, treadmill) are automatically included.
                     </p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </FitnessCardContent>
+            </FitnessCard>
 
-            <Card className="shadow-lg border-0 bg-white">
-              <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-t-lg">
-                <CardTitle className="flex items-center gap-2 text-xl">
+            {/* Camera Equipment Capture */}
+            <FitnessCard className="animate-slide-up" style={{ animationDelay: "200ms" }}>
+              <FitnessCardHeader>
+                <FitnessCardTitle className="flex items-center gap-2">
                   <Camera className="h-5 w-5" />
                   Capture Equipment Photos
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
+                </FitnessCardTitle>
+                <FitnessCardDescription>
+                  Take photos of your gym equipment for automatic detection
+                </FitnessCardDescription>
+              </FitnessCardHeader>
+              <FitnessCardContent>
                 <div className="space-y-4">
                   {/* Camera Controls */}
                   <div className="flex gap-2">
                     {!isCameraOpen ? (
-                      <Button onClick={startCamera} className="bg-purple-500 hover:bg-purple-600">
-                        <Camera className="h-4 w-4 mr-2" />
+                      <FitnessButton onClick={startCamera} className="flex-1">
+                        <Camera className="h-4 w-4" />
                         Start Camera
-                      </Button>
+                      </FitnessButton>
                     ) : (
                       <>
-                        <Button onClick={takePicture} className="bg-green-500 hover:bg-green-600">
-                          <Camera className="h-4 w-4 mr-2" />
+                        <FitnessButton onClick={takePicture} variant="outline" className="flex-1">
+                          <Camera className="h-4 w-4" />
                           Take Photo
-                        </Button>
-                        <Button onClick={stopCamera} variant="outline">
+                        </FitnessButton>
+                        <FitnessButton onClick={stopCamera} variant="ghost">
                           Stop Camera
-                        </Button>
+                        </FitnessButton>
                       </>
                     )}
                   </div>
@@ -450,7 +480,7 @@ const GymEquipmentPage = () => {
                         ref={videoRef} 
                         autoPlay 
                         playsInline 
-                        className="w-full max-w-md mx-auto rounded-lg border-2 border-purple-300"
+                        className="w-full max-w-md mx-auto rounded-lg border-2 border-border"
                       />
                       <canvas ref={canvasRef} className="hidden" />
                     </div>
@@ -458,7 +488,7 @@ const GymEquipmentPage = () => {
 
                   {/* File Upload Option */}
                   <div className="border-t pt-4">
-                    <Label htmlFor="images" className="text-gray-700 font-medium">Or Upload Equipment Photos</Label>
+                    <Label htmlFor="images" className="text-foreground">Or Upload Equipment Photos</Label>
                     <Input
                       id="images"
                       type="file"
@@ -467,7 +497,7 @@ const GymEquipmentPage = () => {
                       onChange={handleFileUpload}
                       className="mt-1"
                     />
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-sm text-muted-foreground mt-2">
                       Upload photos of your gym equipment for automatic detection (coming soon)
                     </p>
                   </div>
@@ -475,42 +505,46 @@ const GymEquipmentPage = () => {
                   {selectedFiles.length > 0 && (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                       {selectedFiles.map((file, index) => (
-                        <div key={index} className="text-sm p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                          <p className="font-medium">{file.name}</p>
-                          <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                        <div key={index} className="text-sm p-3 bg-muted rounded-lg border border-border">
+                          <p className="font-medium truncate">{file.name}</p>
+                          <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+              </FitnessCardContent>
+            </FitnessCard>
 
-            <Card className="shadow-lg border-0 bg-white">
-              <CardHeader className="bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-t-lg">
-                <CardTitle className="flex items-center gap-2 text-xl">
+            {/* Video Recording */}
+            <FitnessCard className="animate-slide-up" style={{ animationDelay: "300ms" }}>
+              <FitnessCardHeader>
+                <FitnessCardTitle className="flex items-center gap-2">
                   <Video className="h-5 w-5" />
                   Record Gym Walkthrough
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
+                </FitnessCardTitle>
+                <FitnessCardDescription>
+                  Record a video walkthrough of your gym showing all available equipment
+                </FitnessCardDescription>
+              </FitnessCardHeader>
+              <FitnessCardContent>
                 <div className="space-y-4">
                   {/* Video Recording Controls */}
                   <div className="flex gap-2">
                     {!isRecording && !stream ? (
-                      <Button onClick={startVideoRecording} className="bg-red-500 hover:bg-red-600">
-                        <Video className="h-4 w-4 mr-2" />
+                      <FitnessButton onClick={startVideoRecording} variant="destructive" className="flex-1">
+                        <Video className="h-4 w-4" />
                         Start Recording
-                      </Button>
+                      </FitnessButton>
                     ) : (
                       <>
-                        <Button onClick={stopVideoRecording} className="bg-red-600 hover:bg-red-700">
-                          <StopCircle className="h-4 w-4 mr-2" />
+                        <FitnessButton onClick={stopVideoRecording} variant="destructive" className="flex-1">
+                          <StopCircle className="h-4 w-4" />
                           Stop Recording
-                        </Button>
+                        </FitnessButton>
                         {isRecording && (
-                          <div className="flex items-center text-red-600 font-medium">
-                            <div className="w-3 h-3 bg-red-600 rounded-full animate-pulse mr-2"></div>
+                          <div className="flex items-center text-destructive font-medium">
+                            <div className="w-3 h-3 bg-destructive rounded-full animate-pulse mr-2"></div>
                             Recording...
                           </div>
                         )}
@@ -526,14 +560,14 @@ const GymEquipmentPage = () => {
                         autoPlay 
                         playsInline 
                         muted={!isRecording}
-                        className="w-full max-w-md mx-auto rounded-lg border-2 border-red-300"
+                        className="w-full max-w-md mx-auto rounded-lg border-2 border-border"
                       />
                     </div>
                   )}
 
                   {/* File Upload Option */}
                   <div className="border-t pt-4">
-                    <Label htmlFor="video" className="text-gray-700 font-medium">Or Upload Gym Tour Video</Label>
+                    <Label htmlFor="video" className="text-foreground">Or Upload Gym Tour Video</Label>
                     <Input
                       id="video"
                       type="file"
@@ -541,117 +575,125 @@ const GymEquipmentPage = () => {
                       onChange={handleVideoUpload}
                       className="mt-1"
                     />
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-sm text-muted-foreground mt-2">
                       Upload a video walkthrough of your gym for equipment detection (coming soon)
                     </p>
                   </div>
 
                   {selectedVideo && (
-                    <div className="text-sm p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                      <p className="font-medium">{selectedVideo.name}</p>
-                      <p className="text-xs text-gray-500">{(selectedVideo.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <div className="text-sm p-3 bg-muted rounded-lg border border-border">
+                      <p className="font-medium truncate">{selectedVideo.name}</p>
+                      <p className="text-xs text-muted-foreground">{(selectedVideo.size / 1024 / 1024).toFixed(2)} MB</p>
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+              </FitnessCardContent>
+            </FitnessCard>
 
-            <Card className="border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-lg">
-              <CardContent className="pt-6">
-                <h3 className="font-semibold mb-3 text-lg text-blue-900">Default Equipment Included:</h3>
+            {/* Default Equipment */}
+            <FitnessCard variant="interactive" className="animate-slide-up" style={{ animationDelay: "400ms" }}>
+              <FitnessCardContent className="pt-6">
+                <h3 className="font-semibold mb-3 text-lg">Default Equipment Included:</h3>
                 <div className="flex flex-wrap gap-2">
                   {defaultEquipment.map((equipment, index) => (
-                    <Badge key={index} className="bg-blue-100 text-blue-800 border border-blue-300">
+                    <Badge key={index} variant="secondary">
                       {equipment}
                     </Badge>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
+              </FitnessCardContent>
+            </FitnessCard>
 
-            <Button
+            <FitnessButton
               onClick={generateWorkoutPlan}
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold py-4 shadow-lg transform transition hover:scale-105"
+              className="w-full"
               size="lg"
             >
+              <Brain className="h-4 w-4" />
               {loading ? "Generating Plan..." : "Generate Workout Plan"}
-            </Button>
+            </FitnessButton>
           </TabsContent>
 
           <TabsContent value="plan" className="space-y-6">
             {workoutPlan && (
               <>
-                <div className="flex justify-between items-center bg-white p-6 rounded-lg shadow-lg border-0">
-                  <h2 className="text-3xl font-bold text-gray-900">{planName}</h2>
-                  <Button onClick={shufflePlan} disabled={shuffling} variant="outline" className="border-blue-300 text-blue-600 hover:bg-blue-50">
-                    <Shuffle className="h-4 w-4 mr-2" />
+                <div className="flex justify-between items-center">
+                  <h2 className="text-heading-lg font-bold">{planName}</h2>
+                  <FitnessButton onClick={shufflePlan} disabled={shuffling} variant="outline">
+                    <Shuffle className="h-4 w-4" />
                     {shuffling ? "Shuffling..." : "Shuffle Plan"}
-                  </Button>
+                  </FitnessButton>
                 </div>
 
                 <div className="grid gap-6">
-                  {Object.entries(workoutPlan.weekPlan).map(([day, dayPlan]) => (
-                    <Card key={day} className="overflow-hidden shadow-lg border-0 bg-white">
-                      <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
-                        <CardTitle className="flex items-center gap-2 text-xl">
+                  {Object.entries(workoutPlan.weekPlan).map(([day, dayPlan], index) => (
+                    <FitnessCard 
+                      key={day} 
+                      variant="workout" 
+                      className="animate-slide-up"
+                      style={{ animationDelay: `${index * 100}ms` }}
+                    >
+                      <FitnessCardHeader>
+                        <FitnessCardTitle className="flex items-center gap-2">
                           <Calendar className="h-5 w-5" />
                           {day} - {dayPlan.focusArea}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-6">
+                        </FitnessCardTitle>
+                      </FitnessCardHeader>
+                      <FitnessCardContent>
                         <div className="space-y-4">
                           {dayPlan.exercises.map((exercise, index) => 
                             renderExercise(exercise, index)
                           )}
                         </div>
-                      </CardContent>
-                    </Card>
+                      </FitnessCardContent>
+                    </FitnessCard>
                   ))}
                 </div>
 
                 {workoutPlan.tips && workoutPlan.tips.length > 0 && (
-                  <Card className="shadow-lg border-0 bg-white">
-                    <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-600 text-white">
-                      <CardTitle className="text-xl">Weekly Tips</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-6">
+                  <FitnessCard className="animate-slide-up">
+                    <FitnessCardHeader>
+                      <FitnessCardTitle>Weekly Tips</FitnessCardTitle>
+                    </FitnessCardHeader>
+                    <FitnessCardContent>
                       <ul className="space-y-2">
                         {workoutPlan.tips.map((tip, index) => (
                           <li key={index} className="flex items-start gap-2">
-                            <span className="text-blue-500 mt-1">•</span>
+                            <span className="text-primary mt-1">•</span>
                             <span>{tip}</span>
                           </li>
                         ))}
                       </ul>
-                    </CardContent>
-                  </Card>
+                    </FitnessCardContent>
+                  </FitnessCard>
                 )}
 
                 {workoutPlan.progressionNotes && (
-                  <Card className="shadow-lg border-0 bg-white">
-                    <CardHeader className="bg-gradient-to-r from-amber-500 to-orange-600 text-white">
-                      <CardTitle className="text-xl">Progression Notes</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-6">
+                  <FitnessCard className="animate-slide-up">
+                    <FitnessCardHeader>
+                      <FitnessCardTitle>Progression Notes</FitnessCardTitle>
+                    </FitnessCardHeader>
+                    <FitnessCardContent>
                       <p>{workoutPlan.progressionNotes}</p>
-                    </CardContent>
-                  </Card>
+                    </FitnessCardContent>
+                  </FitnessCard>
                 )}
 
-                <Button
+                <FitnessButton
                   onClick={() => setActiveTab("input")}
                   variant="outline"
-                  className="w-full border-blue-300 text-blue-600 hover:bg-blue-50 py-4 font-semibold"
+                  className="w-full"
+                  size="lg"
                 >
-                  <RotateCcw className="h-4 w-4 mr-2" />
+                  <RotateCcw className="h-4 w-4" />
                   Create New Plan
-                </Button>
+                </FitnessButton>
               </>
             )}
           </TabsContent>
         </Tabs>
-      </div>
+      </main>
     </div>
   );
 };
