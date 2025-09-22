@@ -110,7 +110,23 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    let workoutPlan = JSON.parse(data.choices[0].message.content);
+    let workoutContent = data.choices[0].message.content;
+    
+    // Clean the response - remove markdown code blocks if present
+    if (workoutContent.includes('```json')) {
+      workoutContent = workoutContent.replace(/```json\s*/g, '').replace(/```\s*$/g, '');
+    } else if (workoutContent.includes('```')) {
+      workoutContent = workoutContent.replace(/```\s*/g, '').replace(/```\s*$/g, '');
+    }
+    
+    let workoutPlan;
+    try {
+      workoutPlan = JSON.parse(workoutContent.trim());
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      console.error('Content that failed to parse:', workoutContent);
+      throw new Error('Failed to parse AI response as JSON');
+    }
 
     // Add YouTube videos for each exercise
     if (youtubeApiKey) {
