@@ -42,7 +42,7 @@ interface WorkoutPlan {
   progressionNotes: string;
 }
 
-const GymEquipmentPage = () => {
+const GymEquipmentPage: React.FC = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("input");
@@ -71,6 +71,15 @@ const GymEquipmentPage = () => {
     "Dumbbells", "Barbells", "Bench", "Treadmill", "Pull-up Bar",
     "Cable Machine", "Smith Machine", "Leg Extension Machine"
   ];
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty.toLowerCase()) {
+      case "beginner": return "bg-success/20 text-success"
+      case "intermediate": return "bg-primary/20 text-primary"
+      case "advanced": return "bg-secondary/20 text-secondary"
+      default: return "bg-muted/20 text-muted-foreground"
+    }
+  }
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -203,7 +212,6 @@ const GymEquipmentPage = () => {
         .map(item => item.trim())
         .filter(item => item.length > 0);
 
-      // TODO: Add image/video analysis here when implementing vision API
       const imageAnalysis = selectedFiles.length > 0 || selectedVideo ? 
         "User uploaded equipment media for analysis" : null;
 
@@ -273,18 +281,12 @@ const GymEquipmentPage = () => {
     }
   };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty.toLowerCase()) {
-      case 'beginner': return 'bg-success/20 text-success';
-      case 'intermediate': return 'bg-primary/20 text-primary';
-      case 'advanced': return 'bg-secondary/20 text-secondary';
-      default: return 'bg-muted/20 text-muted-foreground';
-    }
-  };
-
   const renderExercise = (exercise: Exercise, index: number) => (
-    <div key={index} className="p-4 bg-muted rounded-lg space-y-3 border border-border hover:bg-muted/50 transition-colors">
-      <div className="flex justify-between items-start">
+    <div 
+      key={index} 
+      className="p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors bg-gradient-card"
+    >
+      <div className="flex items-center justify-between mb-3">
         <div>
           <h4 className="font-semibold text-lg">{exercise.name}</h4>
           <p className="text-sm text-muted-foreground">Equipment: {exercise.equipment}</p>
@@ -294,30 +296,28 @@ const GymEquipmentPage = () => {
         </Badge>
       </div>
       
-      <div className="grid grid-cols-3 gap-4 text-sm">
-        <div className="text-center">
-          <div className="font-medium">{exercise.sets}</div>
-          <div className="text-muted-foreground">Sets</div>
+      <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+        <div className="flex items-center gap-1">
+          <Clock className="w-4 h-4" />
+          {exercise.sets} sets
         </div>
-        <div className="text-center">
-          <div className="font-medium">{exercise.reps}</div>
-          <div className="text-muted-foreground">Reps</div>
+        <div className="flex items-center gap-1">
+          <Target className="w-4 h-4" />
+          {exercise.reps} reps
         </div>
-        <div className="text-center">
-          <div className="font-medium">{exercise.restTime}</div>
-          <div className="text-muted-foreground">Rest</div>
+        <div className="text-xs">
+          Rest: {exercise.restTime}
         </div>
       </div>
 
-      <div className="space-y-2">
-        <p className="text-sm">{exercise.instructions}</p>
-        <div className="flex flex-wrap gap-1">
-          {exercise.muscleGroups.map((muscle, idx) => (
-            <Badge key={idx} variant="outline" className="text-xs">
-              {muscle}
-            </Badge>
-          ))}
-        </div>
+      <p className="text-sm mb-3">{exercise.instructions}</p>
+      
+      <div className="flex flex-wrap gap-1 mb-3">
+        {exercise.muscleGroups.map((muscle, idx) => (
+          <Badge key={idx} variant="outline" className="text-xs">
+            {muscle}
+          </Badge>
+        ))}
       </div>
 
       {exercise.youtubeVideos && exercise.youtubeVideos.length > 0 && (
@@ -333,7 +333,7 @@ const GymEquipmentPage = () => {
                 href={`https://www.youtube.com/watch?v=${video.videoId}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex gap-2 p-2 bg-background rounded border hover:shadow-md transition-shadow"
+                className="flex gap-2 p-2 bg-card rounded border hover:shadow-md transition-shadow"
               >
                 <img
                   src={video.thumbnail}
@@ -397,7 +397,7 @@ const GymEquipmentPage = () => {
               <FitnessCardContent>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="planName" className="text-foreground">Plan Name</Label>
+                    <Label htmlFor="planName">Plan Name</Label>
                     <Input
                       id="planName"
                       value={planName}
@@ -424,7 +424,7 @@ const GymEquipmentPage = () => {
               <FitnessCardContent>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="equipment" className="text-foreground">Available Equipment</Label>
+                    <Label htmlFor="equipment">Available Equipment</Label>
                     <Textarea
                       id="equipment"
                       value={manualEquipment}
@@ -453,42 +453,70 @@ const GymEquipmentPage = () => {
               </FitnessCardHeader>
               <FitnessCardContent>
                 <div className="space-y-4">
+                  {/* Camera Preview Area */}
+                  <div className="aspect-video bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-border">
+                    {isCameraOpen ? (
+                      <video 
+                        ref={videoRef} 
+                        autoPlay 
+                        playsInline 
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    ) : (
+                      <div className="text-center space-y-4">
+                        <Camera className="w-12 h-12 text-muted-foreground mx-auto" />
+                        <p className="text-muted-foreground">
+                          Camera preview will appear here
+                        </p>
+                      </div>
+                    )}
+                    <canvas ref={canvasRef} className="hidden" />
+                  </div>
+
                   {/* Camera Controls */}
-                  <div className="flex gap-2">
+                  <div className="flex justify-center gap-4">
                     {!isCameraOpen ? (
-                      <FitnessButton onClick={startCamera} className="flex-1">
-                        <Camera className="h-4 w-4" />
+                      <FitnessButton 
+                        onClick={startCamera}
+                        size="lg"
+                        className="flex-1"
+                      >
+                        <Camera className="w-5 h-5" />
                         Start Camera
                       </FitnessButton>
                     ) : (
                       <>
-                        <FitnessButton onClick={takePicture} variant="outline" className="flex-1">
-                          <Camera className="h-4 w-4" />
+                        <FitnessButton 
+                          onClick={takePicture}
+                          size="lg"
+                          className="flex-1"
+                        >
+                          <Camera className="w-5 h-5" />
                           Take Photo
                         </FitnessButton>
-                        <FitnessButton onClick={stopCamera} variant="ghost">
+                        <FitnessButton 
+                          onClick={stopCamera}
+                          variant="outline"
+                          size="lg"
+                        >
                           Stop Camera
                         </FitnessButton>
                       </>
                     )}
                   </div>
 
-                  {/* Camera Preview */}
-                  {isCameraOpen && (
-                    <div className="space-y-2">
-                      <video 
-                        ref={videoRef} 
-                        autoPlay 
-                        playsInline 
-                        className="w-full max-w-md mx-auto rounded-lg border-2 border-border"
-                      />
-                      <canvas ref={canvasRef} className="hidden" />
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-border" />
                     </div>
-                  )}
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">Or</span>
+                    </div>
+                  </div>
 
                   {/* File Upload Option */}
-                  <div className="border-t pt-4">
-                    <Label htmlFor="images" className="text-foreground">Or Upload Equipment Photos</Label>
+                  <div>
+                    <Label htmlFor="images">Upload Equipment Photos</Label>
                     <Input
                       id="images"
                       type="file"
@@ -505,7 +533,7 @@ const GymEquipmentPage = () => {
                   {selectedFiles.length > 0 && (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                       {selectedFiles.map((file, index) => (
-                        <div key={index} className="text-sm p-3 bg-muted rounded-lg border border-border">
+                        <div key={index} className="text-sm p-3 bg-card rounded-lg border border-border">
                           <p className="font-medium truncate">{file.name}</p>
                           <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                         </div>
@@ -529,17 +557,47 @@ const GymEquipmentPage = () => {
               </FitnessCardHeader>
               <FitnessCardContent>
                 <div className="space-y-4">
-                  {/* Video Recording Controls */}
-                  <div className="flex gap-2">
+                  {/* Video Preview Area */}
+                  <div className="aspect-video bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-border">
+                    {stream ? (
+                      <video 
+                        ref={videoRef} 
+                        autoPlay 
+                        playsInline 
+                        muted={!isRecording}
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    ) : (
+                      <div className="text-center space-y-4">
+                        <Video className="w-12 h-12 text-muted-foreground mx-auto" />
+                        <p className="text-muted-foreground">
+                          {isRecording ? "Recording in progress..." : "Video preview will appear here"}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Recording Controls */}
+                  <div className="flex justify-center gap-4">
                     {!isRecording && !stream ? (
-                      <FitnessButton onClick={startVideoRecording} variant="destructive" className="flex-1">
-                        <Video className="h-4 w-4" />
+                      <FitnessButton 
+                        onClick={startVideoRecording}
+                        variant="destructive"
+                        size="lg"
+                        className="flex-1"
+                      >
+                        <Video className="w-5 h-5" />
                         Start Recording
                       </FitnessButton>
                     ) : (
                       <>
-                        <FitnessButton onClick={stopVideoRecording} variant="destructive" className="flex-1">
-                          <StopCircle className="h-4 w-4" />
+                        <FitnessButton 
+                          onClick={stopVideoRecording}
+                          variant="destructive"
+                          size="lg"
+                          className="flex-1"
+                        >
+                          <StopCircle className="w-5 h-5" />
                           Stop Recording
                         </FitnessButton>
                         {isRecording && (
@@ -552,22 +610,18 @@ const GymEquipmentPage = () => {
                     )}
                   </div>
 
-                  {/* Video Preview */}
-                  {stream && (
-                    <div className="space-y-2">
-                      <video 
-                        ref={videoRef} 
-                        autoPlay 
-                        playsInline 
-                        muted={!isRecording}
-                        className="w-full max-w-md mx-auto rounded-lg border-2 border-border"
-                      />
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-border" />
                     </div>
-                  )}
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">Or</span>
+                    </div>
+                  </div>
 
                   {/* File Upload Option */}
-                  <div className="border-t pt-4">
-                    <Label htmlFor="video" className="text-foreground">Or Upload Gym Tour Video</Label>
+                  <div>
+                    <Label htmlFor="video">Upload Gym Tour Video</Label>
                     <Input
                       id="video"
                       type="file"
@@ -581,7 +635,7 @@ const GymEquipmentPage = () => {
                   </div>
 
                   {selectedVideo && (
-                    <div className="text-sm p-3 bg-muted rounded-lg border border-border">
+                    <div className="text-sm p-3 bg-card rounded-lg border border-border">
                       <p className="font-medium truncate">{selectedVideo.name}</p>
                       <p className="text-xs text-muted-foreground">{(selectedVideo.size / 1024 / 1024).toFixed(2)} MB</p>
                     </div>
@@ -619,7 +673,7 @@ const GymEquipmentPage = () => {
             {workoutPlan && (
               <>
                 <div className="flex justify-between items-center">
-                  <h2 className="text-heading-lg font-bold">{planName}</h2>
+                  <h2 className="text-heading-lg">{planName}</h2>
                   <FitnessButton onClick={shufflePlan} disabled={shuffling} variant="outline">
                     <Shuffle className="h-4 w-4" />
                     {shuffling ? "Shuffling..." : "Shuffle Plan"}
@@ -657,14 +711,19 @@ const GymEquipmentPage = () => {
                       <FitnessCardTitle>Weekly Tips</FitnessCardTitle>
                     </FitnessCardHeader>
                     <FitnessCardContent>
-                      <ul className="space-y-2">
+                      <div className="space-y-4">
                         {workoutPlan.tips.map((tip, index) => (
-                          <li key={index} className="flex items-start gap-2">
-                            <span className="text-primary mt-1">•</span>
-                            <span>{tip}</span>
-                          </li>
+                          <div 
+                            key={index}
+                            className="p-3 border-l-4 rounded-r-lg bg-muted/30 border-l-primary"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-2 h-2 bg-primary rounded-full mt-2" />
+                              <p className="text-sm flex-1">{tip}</p>
+                            </div>
+                          </div>
                         ))}
-                      </ul>
+                      </div>
                     </FitnessCardContent>
                   </FitnessCard>
                 )}
@@ -675,7 +734,9 @@ const GymEquipmentPage = () => {
                       <FitnessCardTitle>Progression Notes</FitnessCardTitle>
                     </FitnessCardHeader>
                     <FitnessCardContent>
-                      <p>{workoutPlan.progressionNotes}</p>
+                      <div className="p-4 bg-primary/10 rounded-lg">
+                        <p className="text-sm">{workoutPlan.progressionNotes}</p>
+                      </div>
                     </FitnessCardContent>
                   </FitnessCard>
                 )}
