@@ -197,25 +197,26 @@ const WorkoutFormMonitor: React.FC<WorkoutFormMonitorProps> = ({ onClose }) => {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
         
-        await new Promise((resolve) => {
+        // Wait for video metadata to load and ensure video plays
+        videoRef.current.onloadedmetadata = () => {
+          console.log('Video metadata loaded, dimensions:', videoRef.current?.videoWidth, 'x', videoRef.current?.videoHeight);
           if (videoRef.current) {
-            videoRef.current.onloadedmetadata = resolve;
+            videoRef.current.play().then(() => {
+              console.log('Video started playing');
+              setIsActive(true);
+              
+              // Start pose analysis if detector is ready
+              if (detectorRef.current) {
+                startPoseAnalysis();
+              } else {
+                console.log('Pose detector not ready, showing camera only');
+              }
+            }).catch(err => {
+              console.error('Error playing video:', err);
+            });
           }
-        });
-
-        setIsActive(true);
-        
-        // Start pose analysis if detector is ready, otherwise just show camera
-        if (detectorRef.current) {
-          await startPoseAnalysis();
-        } else {
-          console.log('Pose detector not ready, showing camera only');
-          toast({
-            title: "Camera Active",
-            description: "AI analysis not available, but camera is working",
-            variant: "default",
-          });
-        }
+        };
+      }
 
         // Increment trial count for non-authenticated users
         if (!isAuthenticated) {
@@ -228,7 +229,6 @@ const WorkoutFormMonitor: React.FC<WorkoutFormMonitorProps> = ({ onClose }) => {
           title: "Camera activated",
           description: "Real-time form monitoring started",
         });
-      }
     } catch (error) {
       console.error('Error accessing camera:', error);
       toast({
@@ -393,9 +393,9 @@ const WorkoutFormMonitor: React.FC<WorkoutFormMonitorProps> = ({ onClose }) => {
         </div>
 
         <div className="p-4 h-full">
-          <div className="grid lg:grid-cols-3 gap-4 h-full">
+          <div className="grid lg:grid-cols-3 gap-4 h-full min-h-[500px]">
             {/* Video Feed */}
-            <div className="lg:col-span-2 relative bg-muted rounded-lg overflow-hidden">
+            <div className="lg:col-span-2 relative bg-muted rounded-lg overflow-hidden min-h-[400px]">
               {isActive ? (
                 <>
                   <video
@@ -404,11 +404,21 @@ const WorkoutFormMonitor: React.FC<WorkoutFormMonitorProps> = ({ onClose }) => {
                     playsInline
                     muted
                     className="w-full h-full object-cover"
+                    style={{ 
+                      transform: 'scaleX(-1)', // Mirror the video for better UX
+                      minHeight: '400px'
+                    }}
+                    onLoadedData={() => console.log('Video data loaded')}
+                    onPlay={() => console.log('Video playing')}
+                    onError={(e) => console.error('Video error:', e)}
                   />
                   <canvas
                     ref={canvasRef}
                     className="absolute inset-0 w-full h-full pointer-events-none"
-                    style={{ opacity: 0.7 }}
+                    style={{ 
+                      opacity: 0.8,
+                      transform: 'scaleX(-1)' // Mirror canvas to match video
+                    }}
                   />
                   
                   {/* Live Feedback Overlay */}
