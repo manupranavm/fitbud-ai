@@ -16,7 +16,12 @@ export default defineConfig(({ mode }) => ({
     },
   },
   optimizeDeps: {
-    include: ['@tensorflow/tfjs', '@tensorflow-models/pose-detection'],
+    include: [
+      '@tensorflow/tfjs',
+      '@tensorflow/tfjs-backend-cpu',
+      '@tensorflow/tfjs-backend-webgl',
+      '@tensorflow-models/pose-detection'
+    ],
   },
   build: {
     rollupOptions: {

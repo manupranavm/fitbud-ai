@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import * as tf from '@tensorflow/tfjs';
+import '@tensorflow/tfjs-backend-cpu';
+import '@tensorflow/tfjs-backend-webgl';
 import * as poseDetection from '@tensorflow-models/pose-detection';
 
 interface PoseAnalysisResult {
@@ -45,7 +47,12 @@ const WorkoutFormMonitor: React.FC<WorkoutFormMonitorProps> = ({ onClose }) => {
   const initializePoseDetection = async () => {
     try {
       setIsLoading(true);
+      console.log('Initializing TensorFlow.js...');
+      
+      // Initialize TensorFlow backends
+      await tf.setBackend('webgl');
       await tf.ready();
+      console.log('TensorFlow.js ready, backend:', tf.getBackend());
       
       const model = poseDetection.SupportedModels.MoveNet;
       const detectorConfig = {
@@ -53,13 +60,19 @@ const WorkoutFormMonitor: React.FC<WorkoutFormMonitorProps> = ({ onClose }) => {
         enableSmoothing: true,
       };
       
+      console.log('Creating pose detector...');
       detectorRef.current = await poseDetection.createDetector(model, detectorConfig);
-      console.log('Pose detector initialized');
+      console.log('Pose detector initialized successfully');
+      
+      toast({
+        title: "AI Model Ready",
+        description: "Pose detection model loaded successfully",
+      });
     } catch (error) {
       console.error('Error initializing pose detection:', error);
       toast({
-        title: "Initialization failed",
-        description: "Could not load AI pose detection model",
+        title: "Model Load Failed",
+        description: "Could not initialize AI pose detection. Camera will still work.",
         variant: "destructive",
       });
     } finally {
@@ -191,7 +204,18 @@ const WorkoutFormMonitor: React.FC<WorkoutFormMonitorProps> = ({ onClose }) => {
         });
 
         setIsActive(true);
-        await startPoseAnalysis();
+        
+        // Start pose analysis if detector is ready, otherwise just show camera
+        if (detectorRef.current) {
+          await startPoseAnalysis();
+        } else {
+          console.log('Pose detector not ready, showing camera only');
+          toast({
+            title: "Camera Active",
+            description: "AI analysis not available, but camera is working",
+            variant: "default",
+          });
+        }
 
         // Increment trial count for non-authenticated users
         if (!isAuthenticated) {
@@ -241,14 +265,18 @@ const WorkoutFormMonitor: React.FC<WorkoutFormMonitorProps> = ({ onClose }) => {
       if (!detectorRef.current || !videoRef.current || !isActive) return;
 
       try {
+        console.log('Analyzing frame...');
         const poses = await detectorRef.current.estimatePoses(videoRef.current);
+        console.log('Poses detected:', poses.length);
         
         if (poses.length > 0) {
           const pose = poses[0];
+          console.log('Pose keypoints:', pose.keypoints.length);
           const feedback = analyzePose(pose.keypoints);
           
           if (feedback) {
             setCurrentFeedback(feedback);
+            console.log('Feedback:', feedback);
           }
 
           // Draw pose keypoints on canvas for visual feedback
@@ -256,15 +284,25 @@ const WorkoutFormMonitor: React.FC<WorkoutFormMonitorProps> = ({ onClose }) => {
           canvas.height = videoRef.current.videoHeight;
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           
-          // Draw keypoints
-          pose.keypoints.forEach(keypoint => {
+          // Draw keypoints with better visibility
+          pose.keypoints.forEach((keypoint, index) => {
             if (keypoint.score && keypoint.score > 0.3) {
               ctx.beginPath();
-              ctx.arc(keypoint.x, keypoint.y, 5, 0, 2 * Math.PI);
-              ctx.fillStyle = 'rgba(0, 255, 0, 0.8)';
+              ctx.arc(keypoint.x, keypoint.y, 6, 0, 2 * Math.PI);
+              ctx.fillStyle = '#00ff00';
               ctx.fill();
+              ctx.strokeStyle = '#ffffff';
+              ctx.lineWidth = 2;
+              ctx.stroke();
+              
+              // Draw keypoint index for debugging
+              ctx.fillStyle = '#ffffff';
+              ctx.font = '12px Arial';
+              ctx.fillText(index.toString(), keypoint.x + 10, keypoint.y);
             }
           });
+        } else {
+          console.log('No poses detected in frame');
         }
       } catch (error) {
         console.error('Error analyzing pose:', error);
