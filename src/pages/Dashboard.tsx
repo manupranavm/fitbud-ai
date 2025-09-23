@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState } from "react"
 import { Link } from "react-router-dom"
 import { 
   TrendingUp, 
@@ -10,8 +10,10 @@ import {
   UtensilsCrossed,
   Trophy,
   Play,
-  Plus
+  Plus,
+  Eye
 } from "lucide-react"
+import WorkoutFormMonitor from "@/components/WorkoutFormMonitor"
 import { useAuth } from "@/hooks/useAuth"
 import { useWorkout } from "@/hooks/useWorkout"
 import { useNutrition } from "@/hooks/useNutrition"
@@ -25,6 +27,7 @@ const Dashboard: React.FC = () => {
   const { user } = useAuth()
   const { totalWorkouts, currentStreak, workoutHistory } = useWorkout()
   const { getTodaysTotals, goals } = useNutrition()
+  const [showFormMonitor, setShowFormMonitor] = useState(false)
   
   // Get real data from stores
   const todaysTotals = getTodaysTotals()
@@ -56,6 +59,14 @@ const Dashboard: React.FC = () => {
       icon: Dumbbell,
       href: "/workout",
       variant: "workout" as const
+    },
+    {
+      title: "Monitor Your Live Workout",
+      description: "Real-time form analysis with AI",
+      icon: Eye,
+      onClick: () => setShowFormMonitor(true),
+      variant: "interactive" as const,
+      isNew: true
     },
     {
       title: "Form Check",
@@ -196,25 +207,48 @@ const Dashboard: React.FC = () => {
             <div className="grid grid-cols-2 gap-4 h-full">
               {quickActions.map((action, index) => {
                 const Icon = action.icon
+                const handleClick = action.onClick || (() => {});
+                
                 return (
                   <FitnessCard 
                     key={index}
                     variant={action.variant}
-                    className="cursor-pointer group hover:scale-[1.02] transition-all duration-200"
+                    className="cursor-pointer group hover:scale-[1.02] transition-all duration-200 relative"
                   >
-                    <Link to={action.href} className="block h-full">
-                      <FitnessCardContent className="flex flex-col items-center text-center p-4">
-                        <div className="mb-3 p-2.5 bg-primary/20 rounded-xl group-hover:bg-primary/30 group-hover:scale-110 transition-all duration-200">
-                          <Icon className="w-5 h-5 text-primary" />
-                        </div>
-                        <FitnessCardTitle className="text-sm mb-1 font-semibold">
-                          {action.title}
-                        </FitnessCardTitle>
-                        <FitnessCardDescription className="text-xs leading-relaxed">
-                          {action.description}
-                        </FitnessCardDescription>
-                      </FitnessCardContent>
-                    </Link>
+                    {action.href ? (
+                      <Link to={action.href} className="block h-full">
+                        <FitnessCardContent className="flex flex-col items-center text-center p-4">
+                          <div className="mb-3 p-2.5 bg-primary/20 rounded-xl group-hover:bg-primary/30 group-hover:scale-110 transition-all duration-200">
+                            <Icon className="w-5 h-5 text-primary" />
+                          </div>
+                          <FitnessCardTitle className="text-sm mb-1 font-semibold">
+                            {action.title}
+                          </FitnessCardTitle>
+                          <FitnessCardDescription className="text-xs leading-relaxed">
+                            {action.description}
+                          </FitnessCardDescription>
+                        </FitnessCardContent>
+                      </Link>
+                    ) : (
+                      <div onClick={handleClick} className="block h-full">
+                        <FitnessCardContent className="flex flex-col items-center text-center p-4">
+                          {action.isNew && (
+                            <div className="absolute -top-2 -right-2 bg-success text-background text-xs px-2 py-1 rounded-full font-semibold">
+                              NEW
+                            </div>
+                          )}
+                          <div className="mb-3 p-2.5 bg-primary/20 rounded-xl group-hover:bg-primary/30 group-hover:scale-110 transition-all duration-200">
+                            <Icon className="w-5 h-5 text-primary" />
+                          </div>
+                          <FitnessCardTitle className="text-sm mb-1 font-semibold">
+                            {action.title}
+                          </FitnessCardTitle>
+                          <FitnessCardDescription className="text-xs leading-relaxed">
+                            {action.description}
+                          </FitnessCardDescription>
+                        </FitnessCardContent>
+                      </div>
+                    )}
                   </FitnessCard>
                 )
               })}
@@ -281,6 +315,11 @@ const Dashboard: React.FC = () => {
             </FitnessCard>
           </div>
         </div>
+
+        {/* Workout Form Monitor Modal */}
+        {showFormMonitor && (
+          <WorkoutFormMonitor onClose={() => setShowFormMonitor(false)} />
+        )}
     </main>
   )
 }
