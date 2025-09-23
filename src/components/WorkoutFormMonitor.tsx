@@ -194,31 +194,37 @@ const WorkoutFormMonitor: React.FC<WorkoutFormMonitorProps> = ({ onClose }) => {
         }
       });
 
-      console.log('Camera stream obtained');
+      console.log('Camera stream obtained:', stream);
       
       if (videoRef.current) {
+        console.log('Setting video srcObject');
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
         
-        // Force video to play
-        videoRef.current.onloadeddata = async () => {
-          console.log('Video data loaded');
-          try {
-            await videoRef.current?.play();
-            console.log('Video playing successfully');
-            setIsActive(true);
-            
-            // Start pose analysis after video is playing
-            setTimeout(() => {
-              if (detectorRef.current && isActive) {
-                startPoseAnalysis();
-              }
-            }, 1000);
-            
-          } catch (playError) {
-            console.error('Error playing video:', playError);
+        // Ensure video plays and becomes visible
+        const playVideo = async () => {
+          if (videoRef.current) {
+            try {
+              await videoRef.current.play();
+              console.log('Video is now playing');
+              setIsActive(true);
+              
+              // Start pose analysis after a delay
+              setTimeout(() => {
+                if (detectorRef.current) {
+                  console.log('Starting pose analysis');
+                  startPoseAnalysis();
+                }
+              }, 1000);
+              
+            } catch (playError) {
+              console.error('Error playing video:', playError);
+            }
           }
         };
+        
+        videoRef.current.addEventListener('loadedmetadata', playVideo);
+        videoRef.current.addEventListener('canplay', playVideo);
       }
 
         // Increment trial count for non-authenticated users
@@ -398,17 +404,29 @@ const WorkoutFormMonitor: React.FC<WorkoutFormMonitorProps> = ({ onClose }) => {
             {/* Video Feed */}
             <div className="lg:col-span-2 relative bg-muted rounded-lg overflow-hidden min-h-[400px]">
               {isActive ? (
-                <div className="relative w-full h-full">
+                <div className="relative w-full h-full bg-black rounded-lg overflow-hidden">
                   <video
                     ref={videoRef}
                     autoPlay
                     playsInline
                     muted
-                    className="w-full h-full object-cover bg-black"
+                    className="w-full h-full object-cover"
                     style={{ 
                       transform: 'scaleX(-1)',
-                      minHeight: '400px',
-                      maxHeight: '600px'
+                      display: 'block',
+                      backgroundColor: '#000'
+                    }}
+                    onLoadedMetadata={() => {
+                      console.log('Video metadata loaded, size:', videoRef.current?.videoWidth, 'x', videoRef.current?.videoHeight);
+                    }}
+                    onCanPlay={() => {
+                      console.log('Video can start playing');
+                    }}
+                    onPlay={() => {
+                      console.log('Video started playing');
+                    }}
+                    onError={(e) => {
+                      console.error('Video error:', e);
                     }}
                   />
                   <canvas
@@ -416,7 +434,8 @@ const WorkoutFormMonitor: React.FC<WorkoutFormMonitorProps> = ({ onClose }) => {
                     className="absolute inset-0 w-full h-full pointer-events-none"
                     style={{ 
                       transform: 'scaleX(-1)',
-                      zIndex: 10
+                      zIndex: 10,
+                      opacity: 0.8
                     }}
                   />
                   
@@ -442,6 +461,13 @@ const WorkoutFormMonitor: React.FC<WorkoutFormMonitorProps> = ({ onClose }) => {
                       <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
                       Monitoring Active
                     </Badge>
+                  </div>
+                  
+                  {/* Debug Info */}
+                  <div className="absolute top-4 right-4 z-20 bg-black/80 text-white p-2 rounded text-xs">
+                    <div>Stream: {streamRef.current ? 'Active' : 'None'}</div>
+                    <div>Video: {videoRef.current?.videoWidth}x{videoRef.current?.videoHeight}</div>
+                    <div>Detector: {detectorRef.current ? 'Ready' : 'Loading'}</div>
                   </div>
                 </div>
               ) : (
