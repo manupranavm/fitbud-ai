@@ -185,35 +185,38 @@ const WorkoutFormMonitor: React.FC<WorkoutFormMonitorProps> = ({ onClose }) => {
     }
 
     try {
+      console.log('Requesting camera access...');
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+          width: { ideal: 640 },
+          height: { ideal: 480 },
           facingMode: 'user'
         }
       });
 
+      console.log('Camera stream obtained');
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
         
-        // Wait for video metadata to load and ensure video plays
-        videoRef.current.onloadedmetadata = () => {
-          console.log('Video metadata loaded, dimensions:', videoRef.current?.videoWidth, 'x', videoRef.current?.videoHeight);
-          if (videoRef.current) {
-            videoRef.current.play().then(() => {
-              console.log('Video started playing');
-              setIsActive(true);
-              
-              // Start pose analysis if detector is ready
-              if (detectorRef.current) {
+        // Force video to play
+        videoRef.current.onloadeddata = async () => {
+          console.log('Video data loaded');
+          try {
+            await videoRef.current?.play();
+            console.log('Video playing successfully');
+            setIsActive(true);
+            
+            // Start pose analysis after video is playing
+            setTimeout(() => {
+              if (detectorRef.current && isActive) {
                 startPoseAnalysis();
-              } else {
-                console.log('Pose detector not ready, showing camera only');
               }
-            }).catch(err => {
-              console.error('Error playing video:', err);
-            });
+            }, 1000);
+            
+          } catch (playError) {
+            console.error('Error playing video:', playError);
           }
         };
       }
@@ -262,47 +265,45 @@ const WorkoutFormMonitor: React.FC<WorkoutFormMonitorProps> = ({ onClose }) => {
     if (!ctx) return;
 
     const analyzeFrame = async () => {
-      if (!detectorRef.current || !videoRef.current || !isActive) return;
+      if (!detectorRef.current || !videoRef.current || !isActive) {
+        console.log('Analysis stopped - missing requirements');
+        return;
+      }
 
       try {
-        console.log('Analyzing frame...');
         const poses = await detectorRef.current.estimatePoses(videoRef.current);
-        console.log('Poses detected:', poses.length);
         
         if (poses.length > 0) {
           const pose = poses[0];
-          console.log('Pose keypoints:', pose.keypoints.length);
           const feedback = analyzePose(pose.keypoints);
           
           if (feedback) {
             setCurrentFeedback(feedback);
-            console.log('Feedback:', feedback);
           }
 
-          // Draw pose keypoints on canvas for visual feedback
-          canvas.width = videoRef.current.videoWidth;
-          canvas.height = videoRef.current.videoHeight;
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          
-          // Draw keypoints with better visibility
-          pose.keypoints.forEach((keypoint, index) => {
-            if (keypoint.score && keypoint.score > 0.3) {
-              ctx.beginPath();
-              ctx.arc(keypoint.x, keypoint.y, 6, 0, 2 * Math.PI);
-              ctx.fillStyle = '#00ff00';
-              ctx.fill();
-              ctx.strokeStyle = '#ffffff';
-              ctx.lineWidth = 2;
-              ctx.stroke();
+          // Draw pose keypoints on canvas
+          if (canvasRef.current) {
+            const canvas = canvasRef.current;
+            const ctx = canvas.getContext('2d');
+            if (ctx && videoRef.current) {
+              canvas.width = videoRef.current.videoWidth;
+              canvas.height = videoRef.current.videoHeight;
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
               
-              // Draw keypoint index for debugging
-              ctx.fillStyle = '#ffffff';
-              ctx.font = '12px Arial';
-              ctx.fillText(index.toString(), keypoint.x + 10, keypoint.y);
+              // Draw keypoints
+              pose.keypoints.forEach((keypoint) => {
+                if (keypoint.score && keypoint.score > 0.3) {
+                  ctx.beginPath();
+                  ctx.arc(keypoint.x, keypoint.y, 8, 0, 2 * Math.PI);
+                  ctx.fillStyle = '#00ff00';
+                  ctx.fill();
+                  ctx.strokeStyle = '#ffffff';
+                  ctx.lineWidth = 2;
+                  ctx.stroke();
+                }
+              });
             }
-          });
-        } else {
-          console.log('No poses detected in frame');
+          }
         }
       } catch (error) {
         console.error('Error analyzing pose:', error);
@@ -397,33 +398,31 @@ const WorkoutFormMonitor: React.FC<WorkoutFormMonitorProps> = ({ onClose }) => {
             {/* Video Feed */}
             <div className="lg:col-span-2 relative bg-muted rounded-lg overflow-hidden min-h-[400px]">
               {isActive ? (
-                <>
+                <div className="relative w-full h-full">
                   <video
                     ref={videoRef}
                     autoPlay
                     playsInline
                     muted
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover bg-black"
                     style={{ 
-                      transform: 'scaleX(-1)', // Mirror the video for better UX
-                      minHeight: '400px'
+                      transform: 'scaleX(-1)',
+                      minHeight: '400px',
+                      maxHeight: '600px'
                     }}
-                    onLoadedData={() => console.log('Video data loaded')}
-                    onPlay={() => console.log('Video playing')}
-                    onError={(e) => console.error('Video error:', e)}
                   />
                   <canvas
                     ref={canvasRef}
                     className="absolute inset-0 w-full h-full pointer-events-none"
                     style={{ 
-                      opacity: 0.8,
-                      transform: 'scaleX(-1)' // Mirror canvas to match video
+                      transform: 'scaleX(-1)',
+                      zIndex: 10
                     }}
                   />
                   
                   {/* Live Feedback Overlay */}
                   {currentFeedback && (
-                    <div className="absolute top-4 left-4 right-4">
+                    <div className="absolute top-4 left-4 right-4 z-20">
                       <Badge 
                         variant={getFeedbackVariant(currentFeedback.type)}
                         className="flex items-center gap-2 p-3 text-sm backdrop-blur-sm"
@@ -438,13 +437,13 @@ const WorkoutFormMonitor: React.FC<WorkoutFormMonitorProps> = ({ onClose }) => {
                   )}
 
                   {/* Status Indicator */}
-                  <div className="absolute bottom-4 left-4">
+                  <div className="absolute bottom-4 left-4 z-20">
                     <Badge variant="default" className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
                       Monitoring Active
                     </Badge>
                   </div>
-                </>
+                </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-center p-8">
                   <Camera className="w-16 h-16 text-muted-foreground mb-4" />
