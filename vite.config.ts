@@ -15,4 +15,12 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    include: ['@tensorflow/tfjs', '@tensorflow-models/pose-detection'],
+  },
+  build: {
+    rollupOptions: {
+      external: [],
+    },
+  },
 }));
