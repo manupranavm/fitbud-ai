@@ -32,6 +32,8 @@ interface NutritionState {
   getTodaysTotals: () => { calories: number; protein: number; carbs: number; fat: number }
   loadTodaysFoods: () => Promise<void>
   clearDay: () => Promise<void>
+  loadHistoricalData: (startDate: string, endDate: string) => Promise<FoodItem[]>
+  getDailyTotalsForDateRange: (startDate: string, endDate: string) => Promise<{ date: string; calories: number; protein: number; carbs: number; fat: number; meals: number }[]>
 }
 
 export const useNutrition = create<NutritionState>()((set, get) => ({
@@ -173,6 +175,70 @@ export const useNutrition = create<NutritionState>()((set, get) => ({
     } catch (error) {
       console.error('Error clearing day:', error)
       set({ isLoading: false })
+    }
+  },
+
+  loadHistoricalData: async (startDate, endDate) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return []
+
+    try {
+      const { data, error } = await supabase
+        .from('food_entries')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('logged_date', startDate)
+        .lte('logged_date', endDate)
+        .order('logged_date', { ascending: false })
+
+      if (error) throw error
+      return data || []
+    } catch (error) {
+      console.error('Error loading historical data:', error)
+      return []
+    }
+  },
+
+  getDailyTotalsForDateRange: async (startDate, endDate) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return []
+
+    try {
+      const { data, error } = await supabase
+        .from('food_entries')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('logged_date', startDate)
+        .lte('logged_date', endDate)
+        .order('logged_date', { ascending: false })
+
+      if (error) throw error
+
+      // Group by date and calculate totals
+      const dailyTotals = (data || []).reduce((acc, food) => {
+        const date = food.logged_date
+        if (!acc[date]) {
+          acc[date] = {
+            date,
+            calories: 0,
+            protein: 0,
+            carbs: 0,
+            fat: 0,
+            meals: 0
+          }
+        }
+        acc[date].calories += Number(food.calories)
+        acc[date].protein += Number(food.protein)
+        acc[date].carbs += Number(food.carbs)
+        acc[date].fat += Number(food.fat)
+        acc[date].meals += 1
+        return acc
+      }, {} as Record<string, any>)
+
+      return Object.values(dailyTotals)
+    } catch (error) {
+      console.error('Error loading daily totals:', error)
+      return []
     }
   }
 }))

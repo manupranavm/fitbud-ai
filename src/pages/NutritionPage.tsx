@@ -26,11 +26,17 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, BarChart, Bar } from "recharts"
 
 const NutritionPage: React.FC = () => {
-  const { addFood, getTodaysTotals, goals, dailyFoods, loadTodaysFoods, isLoading } = useNutrition()
+  const { addFood, getTodaysTotals, goals, dailyFoods, loadTodaysFoods, isLoading, getDailyTotalsForDateRange } = useNutrition()
   const { user } = useAuth()
   const [scanResult, setScanResult] = useState<any>(null)
   const [portionSize, setPortionSize] = useState(100)
+  const [historicalData, setHistoricalData] = useState<any[]>([])
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false)
+  const [isCameraOpen, setIsCameraOpen] = useState(false)
+  const [stream, setStream] = useState<MediaStream | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
 
   // Get today's totals from the store
   const todaysTotals = getTodaysTotals()
@@ -84,38 +90,115 @@ const NutritionPage: React.FC = () => {
     portion: "1 serving (200g)"
   }
 
+  // Load historical data for the past month
+  useEffect(() => {
+    if (user) {
+      loadHistoryData()
+    }
+  }, [user])
+
+  const loadHistoryData = async () => {
+    setIsLoadingHistory(true)
+    try {
+      const endDate = new Date().toISOString().split('T')[0]
+      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      const data = await getDailyTotalsForDateRange(startDate, endDate)
+      setHistoricalData(data)
+    } catch (error) {
+      console.error('Error loading history:', error)
+    } finally {
+      setIsLoadingHistory(false)
+    }
+  }
+
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
+      })
+      setStream(mediaStream)
+      setIsCameraOpen(true)
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream
+        await videoRef.current.play()
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error)
+      toast.error("Unable to access camera. Please check permissions.")
+    }
+  }
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop())
+      setStream(null)
+    }
+    setIsCameraOpen(false)
+  }
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const canvas = canvasRef.current
+      const video = videoRef.current
+      const context = canvas.getContext('2d')
+
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      
+      if (context) {
+        context.drawImage(video, 0, 0)
+        canvas.toBlob(async (blob) => {
+          if (blob) {
+            const reader = new FileReader()
+            reader.onload = async (e) => {
+              const base64Data = e.target?.result as string
+              await processImageData(base64Data)
+            }
+            reader.readAsDataURL(blob)
+          }
+        }, 'image/jpeg', 0.8)
+      }
+      stopCamera()
+    }
+  }
+
+  const processImageData = async (base64Data: string) => {
+    try {
+      toast.success("Food image captured! Analyzing...")
+      
+      const { supabase } = await import("@/integrations/supabase/client")
+      const { data, error } = await supabase.functions.invoke('analyze-food-image', {
+        body: { imageBase64: base64Data }
+      })
+      
+      if (error) {
+        console.error('Error analyzing food:', error)
+        toast.error("Failed to analyze food image. Please try again.")
+        return
+      }
+      
+      setScanResult(data)
+      toast.success("Food identified! Adjust portion size if needed.")
+    } catch (err) {
+      console.error('Error calling food analysis:', err)
+      toast.error("Failed to analyze food image. Please try again.")
+    }
+  }
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
       try {
-        toast.success("Food image uploaded! Analyzing...")
-        
-        // Convert file to base64
         const reader = new FileReader()
         reader.onload = async (e) => {
           const base64Data = e.target?.result as string
-          
-          try {
-            // Call the edge function
-            const { supabase } = await import("@/integrations/supabase/client")
-            const { data, error } = await supabase.functions.invoke('analyze-food-image', {
-              body: { imageBase64: base64Data }
-            })
-            
-            if (error) {
-              console.error('Error analyzing food:', error)
-              toast.error("Failed to analyze food image. Please try again.")
-              return
-            }
-            
-            setScanResult(data)
-            toast.success("Food identified! Adjust portion size if needed.")
-          } catch (err) {
-            console.error('Error calling food analysis:', err)
-            toast.error("Failed to analyze food image. Please try again.")
-          }
+          await processImageData(base64Data)
         }
-        
         reader.readAsDataURL(file)
       } catch (err) {
         console.error('Error processing file:', err)
@@ -452,7 +535,7 @@ const adjustCalories = (newPortion: number) => {
 
                         {/* Scan Options */}
                         <div className="grid grid-cols-2 gap-3">
-                          <FitnessButton size="lg">
+                          <FitnessButton size="lg" onClick={startCamera}>
                             <Camera className="w-5 h-5" />
                             Take Photo
                           </FitnessButton>
@@ -571,27 +654,188 @@ const adjustCalories = (newPortion: number) => {
 
           {/* History */}
           <TabsContent value="history" className="space-y-6">
-            <FitnessCard className="animate-slide-up">
-              <FitnessCardHeader>
-                <div className="flex items-center justify-between">
-                  <FitnessCardTitle>Nutrition History</FitnessCardTitle>
-                  <FitnessButton variant="ghost" size="sm">
-                    <TrendingUp className="w-4 h-4" />
-                    View Trends
-                  </FitnessButton>
-                </div>
-              </FitnessCardHeader>
-              
-              <FitnessCardContent>
-                <div className="text-center py-12 text-muted-foreground">
-                  <Utensils className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Your nutrition history will appear here</p>
-                  <p className="text-sm">Start logging meals to track your progress</p>
-                </div>
-              </FitnessCardContent>
-            </FitnessCard>
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* Monthly Overview Chart */}
+              <div className="lg:col-span-2">
+                <FitnessCard className="animate-slide-up">
+                  <FitnessCardHeader>
+                    <FitnessCardTitle>Monthly Calorie Tracking</FitnessCardTitle>
+                    <FitnessCardDescription>
+                      Your daily calorie intake over the past 30 days
+                    </FitnessCardDescription>
+                  </FitnessCardHeader>
+                  
+                  <FitnessCardContent>
+                    {isLoadingHistory ? (
+                      <div className="h-64 flex items-center justify-center">
+                        <div className="text-center space-y-2">
+                          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+                          <p className="text-muted-foreground">Loading history...</p>
+                        </div>
+                      </div>
+                    ) : historicalData.length > 0 ? (
+                      <div className="h-64 w-full">
+                        <ChartContainer
+                          config={{
+                            calories: {
+                              label: "Calories",
+                              color: "hsl(var(--primary))",
+                            },
+                          }}
+                        >
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={historicalData.reverse()}>
+                              <XAxis 
+                                dataKey="date"
+                                tick={{ fontSize: 10 }}
+                                tickLine={false}
+                                axisLine={false}
+                                tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              />
+                              <YAxis 
+                                tick={{ fontSize: 12 }}
+                                tickLine={false}
+                                axisLine={false}
+                              />
+                              <ChartTooltip
+                                content={({ active, payload, label }) => {
+                                  if (active && payload && payload.length) {
+                                    const data = payload[0].payload
+                                    return (
+                                      <div className="bg-background border border-border rounded-lg p-3 shadow-lg">
+                                        <p className="font-medium">{new Date(label).toLocaleDateString()}</p>
+                                        <p className="text-primary font-semibold">
+                                          {payload[0].value} calories
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {data.meals} meals logged
+                                        </p>
+                                      </div>
+                                    )
+                                  }
+                                  return null
+                                }}
+                              />
+                              <Line 
+                                type="monotone"
+                                dataKey="calories" 
+                                stroke="hsl(var(--primary))"
+                                strokeWidth={2}
+                                dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 4 }}
+                                activeDot={{ r: 6, stroke: "hsl(var(--primary))", strokeWidth: 2 }}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </ChartContainer>
+                      </div>
+                    ) : (
+                      <div className="h-64 flex items-center justify-center text-muted-foreground">
+                        <div className="text-center space-y-2">
+                          <Utensils className="w-12 h-12 mx-auto opacity-50" />
+                          <p>No nutrition history available</p>
+                          <p className="text-sm">Start logging meals to see your progress</p>
+                        </div>
+                      </div>
+                    )}
+                  </FitnessCardContent>
+                </FitnessCard>
+              </div>
+
+              {/* Summary Stats */}
+              <div className="space-y-4">
+                <FitnessCard className="animate-slide-up" style={{ animationDelay: "100ms" }}>
+                  <FitnessCardHeader>
+                    <FitnessCardTitle className="text-base">30-Day Summary</FitnessCardTitle>
+                  </FitnessCardHeader>
+                  <FitnessCardContent>
+                    {historicalData.length > 0 ? (
+                      <div className="space-y-4">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-primary">
+                            {Math.round(historicalData.reduce((sum, day) => sum + day.calories, 0) / historicalData.length)}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Avg calories/day</div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Days tracked:</span>
+                            <span className="font-medium">{historicalData.length}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Total meals:</span>
+                            <span className="font-medium">{historicalData.reduce((sum, day) => sum + day.meals, 0)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Highest day:</span>
+                            <span className="font-medium">{Math.max(...historicalData.map(d => d.calories))} cal</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center text-muted-foreground">
+                        <p className="text-sm">No data available</p>
+                      </div>
+                    )}
+                  </FitnessCardContent>
+                </FitnessCard>
+
+                <FitnessCard className="animate-slide-up" style={{ animationDelay: "200ms" }}>
+                  <FitnessCardHeader>
+                    <FitnessCardTitle className="text-base">Quick Actions</FitnessCardTitle>
+                  </FitnessCardHeader>
+                  <FitnessCardContent>
+                    <div className="space-y-2">
+                      <FitnessButton 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full justify-start"
+                        onClick={loadHistoryData}
+                      >
+                        <TrendingUp className="w-4 h-4 mr-2" />
+                        Refresh Data
+                      </FitnessButton>
+                    </div>
+                  </FitnessCardContent>
+                </FitnessCard>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
+
+        {/* Camera Modal */}
+        {isCameraOpen && (
+          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+            <div className="bg-background rounded-lg p-6 max-w-md w-full">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Capture Food Image</h3>
+                  <FitnessButton variant="ghost" size="sm" onClick={stopCamera}>
+                    ✕
+                  </FitnessButton>
+                </div>
+                
+                <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                
+                <FitnessButton onClick={capturePhoto} className="w-full" size="lg">
+                  <Camera className="w-5 h-5 mr-2" />
+                  Capture Photo
+                </FitnessButton>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Hidden canvas for photo capture */}
+        <canvas ref={canvasRef} className="hidden" />
       </main>
     </div>
   )
