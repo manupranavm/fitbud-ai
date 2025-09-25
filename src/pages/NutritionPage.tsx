@@ -22,6 +22,8 @@ import { useNutrition } from "@/hooks/useNutrition"
 import { useAuth } from "@/hooks/useAuth"
 import { useEffect } from "react"
 import healthyFoodImage from "@/assets/healthy-food.jpg"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, BarChart, Bar } from "recharts"
 
 const NutritionPage: React.FC = () => {
   const { addFood, getTodaysTotals, goals, dailyFoods, loadTodaysFoods, isLoading } = useNutrition()
@@ -38,6 +40,29 @@ const NutritionPage: React.FC = () => {
       loadTodaysFoods()
     }
   }, [user, loadTodaysFoods])
+
+  // Prepare hourly calorie data for the chart
+  const getHourlyCalorieData = () => {
+    const hourlyData = Array.from({ length: 24 }, (_, hour) => ({
+      hour: `${hour.toString().padStart(2, '0')}:00`,
+      calories: 0,
+      meals: []
+    }))
+
+    dailyFoods.forEach(food => {
+      const hour = new Date(food.created_at).getHours()
+      hourlyData[hour].calories += Number(food.calories)
+      hourlyData[hour].meals.push(food.food_name)
+    })
+
+    // Only return hours with data or the current hour
+    const currentHour = new Date().getHours()
+    return hourlyData.filter((data, index) => 
+      data.calories > 0 || index === currentHour || index <= currentHour
+    )
+  }
+
+  const hourlyCalorieData = getHourlyCalorieData()
   const dailyGoals = {
     calories: { current: todaysTotals.calories, target: goals.calories },
     protein: { current: todaysTotals.protein, target: goals.protein },
@@ -271,8 +296,94 @@ const adjustCalories = (newPortion: number) => {
               </FitnessCard>
             </div>
 
-            {/* Recent Meals */}
+            {/* Calorie Intake Chart */}
             <FitnessCard className="animate-slide-up" style={{ animationDelay: "400ms" }}>
+              <FitnessCardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <FitnessCardTitle>Daily Calorie Intake</FitnessCardTitle>
+                    <FitnessCardDescription>
+                      Your calorie consumption throughout the day
+                    </FitnessCardDescription>
+                  </div>
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3" />
+                    {todaysTotals.calories} cal total
+                  </Badge>
+                </div>
+              </FitnessCardHeader>
+              
+              <FitnessCardContent>
+                {dailyFoods.length > 0 ? (
+                  <div className="h-64 w-full">
+                    <ChartContainer
+                      config={{
+                        calories: {
+                          label: "Calories",
+                          color: "hsl(var(--primary))",
+                        },
+                      }}
+                    >
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={hourlyCalorieData}>
+                          <XAxis 
+                            dataKey="hour" 
+                            tick={{ fontSize: 12 }}
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <YAxis 
+                            tick={{ fontSize: 12 }}
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <ChartTooltip
+                            content={({ active, payload, label }) => {
+                              if (active && payload && payload.length) {
+                                const data = payload[0].payload
+                                return (
+                                  <div className="bg-background border border-border rounded-lg p-3 shadow-lg">
+                                    <p className="font-medium">{label}</p>
+                                    <p className="text-primary font-semibold">
+                                      {payload[0].value} calories
+                                    </p>
+                                    {data.meals.length > 0 && (
+                                      <div className="mt-2 space-y-1">
+                                        <p className="text-xs text-muted-foreground">Meals:</p>
+                                        {data.meals.map((meal, index) => (
+                                          <p key={index} className="text-xs">{meal}</p>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )
+                              }
+                              return null
+                            }}
+                          />
+                          <Bar 
+                            dataKey="calories" 
+                            fill="hsl(var(--primary))"
+                            radius={[4, 4, 0, 0]}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  </div>
+                ) : (
+                  <div className="h-64 flex items-center justify-center text-muted-foreground">
+                    <div className="text-center space-y-2">
+                      <Utensils className="w-12 h-12 mx-auto opacity-50" />
+                      <p>No meals logged yet today</p>
+                      <p className="text-sm">Start tracking to see your calorie chart</p>
+                    </div>
+                  </div>
+                )}
+              </FitnessCardContent>
+            </FitnessCard>
+
+            {/* Recent Meals */}
+            <FitnessCard className="animate-slide-up" style={{ animationDelay: "500ms" }}>
               <FitnessCardHeader>
                 <div className="flex items-center justify-between">
                   <FitnessCardTitle>Today's Meals</FitnessCardTitle>
