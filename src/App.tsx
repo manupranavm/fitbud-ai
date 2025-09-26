@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import WorkoutPage from "./pages/WorkoutPage";
 import WorkoutSessionPage from "./pages/WorkoutSessionPage";
 import WorkoutPlanDetailsPage from "./pages/WorkoutPlanDetailsPage";
+import ExerciseDetailsPage from "./pages/ExerciseDetailsPage";
 import GymEquipmentPage from "./pages/GymEquipmentPage";
 import FormCheckPage from "./pages/FormCheckPage";
 import NutritionPage from "./pages/NutritionPage";
@@ -41,6 +42,7 @@ const AppContent = () => {
         <Route path="/workout" element={<ProtectedRoute><AppLayout><WorkoutPage /></AppLayout></ProtectedRoute>} />
         <Route path="/workout/session/:workoutId" element={<ProtectedRoute><WorkoutSessionPage /></ProtectedRoute>} />
         <Route path="/workout/plan/:planId/details" element={<ProtectedRoute><AppLayout><WorkoutPlanDetailsPage /></AppLayout></ProtectedRoute>} />
+        <Route path="/exercise/:exerciseName" element={<ProtectedRoute><ExerciseDetailsPage /></ProtectedRoute>} />
         <Route path="/gym-equipment" element={<ProtectedRoute><AppLayout><GymEquipmentPage /></AppLayout></ProtectedRoute>} />
         <Route path="/form-check" element={<ProtectedRoute><AppLayout><FormCheckPage /></AppLayout></ProtectedRoute>} />
         <Route path="/nutrition" element={<ProtectedRoute><AppLayout><NutritionPage /></AppLayout></ProtectedRoute>} />

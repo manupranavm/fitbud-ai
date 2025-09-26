@@ -29,6 +29,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import gymImage from "@/assets/gym-workout.jpg"
+import { useWorkout } from "@/hooks/useWorkout"
+import { useEquipmentWorkouts } from "@/hooks/useEquipmentWorkouts"
 
 interface Exercise {
   name: string
@@ -51,6 +53,8 @@ interface WorkoutData {
 const WorkoutSessionPage: React.FC = () => {
   const { workoutId } = useParams()
   const navigate = useNavigate()
+  const { completeWorkout, addWorkoutToHistory } = useWorkout()
+  const { getTodaysWorkout } = useEquipmentWorkouts()
   
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0)
   const [currentSet, setCurrentSet] = useState(1)
@@ -63,51 +67,75 @@ const WorkoutSessionPage: React.FC = () => {
   const [analysisResult, setAnalysisResult] = useState<any>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Mock workout data - in real app, fetch from API/database
-  const workoutData: WorkoutData = {
-    id: workoutId || "1",
-    name: "Upper Body Strength",
-    duration: 45,
-    difficulty: "Intermediate",
-    exercises: [
-      {
-        name: "Push-ups",
-        sets: 3,
-        reps: 12,
-        restTime: "60s",
-        instructions: "Keep your body straight, lower until chest nearly touches the ground, then push back up.",
-        demoVideoUrl: "https://www.youtube.com/embed/IODxDxX7oi4",
-        completed: false
-      },
-      {
-        name: "Bench Press",
-        sets: 4,
-        reps: 8,
-        restTime: "90s",
-        instructions: "Lie on bench, grip bar slightly wider than shoulders, lower to chest, press up.",
-        demoVideoUrl: "https://www.youtube.com/embed/rT7DgCr-3pg",
-        completed: false
-      },
-      {
-        name: "Dumbbell Rows",
-        sets: 3,
-        reps: 10,
-        restTime: "60s",
-        instructions: "Bend over slightly, pull dumbbells to your sides, squeeze shoulder blades together.",
-        demoVideoUrl: "https://www.youtube.com/embed/6TSP1TRKn_w",
-        completed: false
-      },
-      {
-        name: "Shoulder Press",
-        sets: 3,
-        reps: 10,
-        restTime: "60s",
-        instructions: "Press dumbbells overhead, keep core tight, lower with control.",
-        demoVideoUrl: "https://www.youtube.com/embed/qEwKCR5JCog",
-        completed: false
+  // Get workout data from equipment planner or use default
+  const getWorkoutData = (): WorkoutData => {
+    if (workoutId === 'today') {
+      const equipmentWorkout = getTodaysWorkout()
+      if (equipmentWorkout) {
+        return {
+          id: 'today',
+          name: equipmentWorkout.name,
+          duration: equipmentWorkout.duration,
+          difficulty: equipmentWorkout.difficulty,
+          exercises: equipmentWorkout.exercises.map(ex => ({
+            ...ex,
+            restTime: "60s",
+            instructions: `Perform ${ex.reps} repetitions for ${ex.sets} sets.`,
+            demoVideoUrl: "https://www.youtube.com/embed/IODxDxX7oi4",
+            completed: false
+          }))
+        }
       }
-    ]
+    }
+
+    // Default workout data for other workout IDs
+    return {
+      id: workoutId || "1",
+      name: "Upper Body Strength",
+      duration: 45,
+      difficulty: "Intermediate",
+      exercises: [
+        {
+          name: "Push-ups",
+          sets: 3,
+          reps: 12,
+          restTime: "60s",
+          instructions: "Keep your body straight, lower until chest nearly touches the ground, then push back up.",
+          demoVideoUrl: "https://www.youtube.com/embed/IODxDxX7oi4",
+          completed: false
+        },
+        {
+          name: "Bench Press",
+          sets: 4,
+          reps: 8,
+          restTime: "90s",
+          instructions: "Lie on bench, grip bar slightly wider than shoulders, lower to chest, press up.",
+          demoVideoUrl: "https://www.youtube.com/embed/rT7DgCr-3pg",
+          completed: false
+        },
+        {
+          name: "Dumbbell Rows",
+          sets: 3,
+          reps: 10,
+          restTime: "60s",
+          instructions: "Bend over slightly, pull dumbbells to your sides, squeeze shoulder blades together.",
+          demoVideoUrl: "https://www.youtube.com/embed/6TSP1TRKn_w",
+          completed: false
+        },
+        {
+          name: "Shoulder Press",
+          sets: 3,
+          reps: 10,
+          restTime: "60s",
+          instructions: "Press dumbbells overhead, keep core tight, lower with control.",
+          demoVideoUrl: "https://www.youtube.com/embed/qEwKCR5JCog",
+          completed: false
+        }
+      ]
+    }
   }
+
+  const workoutData = getWorkoutData()
 
   const currentExercise = workoutData.exercises[currentExerciseIndex]
   const totalSets = currentExercise?.sets || 0
@@ -160,6 +188,23 @@ const WorkoutSessionPage: React.FC = () => {
         setCurrentSet(1)
       } else {
         // Workout completed
+        const completedWorkout = {
+          id: workoutData.id,
+          name: workoutData.name,
+          date: new Date().toISOString(),
+          duration: workoutData.duration,
+          exercises: workoutData.exercises.map(ex => ({ 
+            name: ex.name,
+            sets: ex.sets,
+            reps: typeof ex.reps === 'string' ? parseInt(ex.reps) || 12 : ex.reps,
+            completed: true
+          })),
+          difficulty: workoutData.difficulty,
+          completed: true
+        }
+        
+        addWorkoutToHistory(completedWorkout)
+        completeWorkout()
         toast.success("Workout completed! Great job!")
         navigate("/dashboard")
       }

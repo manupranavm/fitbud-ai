@@ -17,6 +17,7 @@ import WorkoutFormMonitor from "@/components/WorkoutFormMonitor"
 import { useAuth } from "@/hooks/useAuth"
 import { useWorkout } from "@/hooks/useWorkout"
 import { useNutrition } from "@/hooks/useNutrition"
+import { useEquipmentWorkouts } from "@/hooks/useEquipmentWorkouts"
 
 import { FitnessButton } from "@/components/ui/fitness-button"
 import { FitnessCard, FitnessCardContent, FitnessCardDescription, FitnessCardHeader, FitnessCardTitle } from "@/components/ui/fitness-card"
@@ -27,6 +28,7 @@ const Dashboard: React.FC = () => {
   const { user } = useAuth()
   const { totalWorkouts, currentStreak, workoutHistory, currentWorkout } = useWorkout()
   const { getTodaysTotals, goals, loadTodaysFoods } = useNutrition()
+  const { getTodaysWorkout } = useEquipmentWorkouts()
   const [showFormMonitor, setShowFormMonitor] = useState(false)
   
   // Load today's nutrition data on component mount
@@ -70,7 +72,15 @@ const Dashboard: React.FC = () => {
   }
 
   // Get the most recent or current workout for today's workout display
-  const getTodaysWorkout = () => {
+  const getDisplayWorkout = () => {
+    // First check equipment workout
+    const equipmentWorkout = getTodaysWorkout()
+    if (equipmentWorkout) {
+      return {
+        ...equipmentWorkout,
+        completed: false
+      }
+    }
     const today = new Date().toDateString()
     const todaysWorkout = workoutHistory.find(workout => 
       new Date(workout.date).toDateString() === today
@@ -333,9 +343,9 @@ const Dashboard: React.FC = () => {
               <FitnessCardHeader>
                 <div className="flex items-center justify-between">
                  <div>
-                   <FitnessCardTitle>{todaysWorkout.name}</FitnessCardTitle>
+                   <FitnessCardTitle>{todaysWorkout?.name || "No Workout Planned"}</FitnessCardTitle>
                    <FitnessCardDescription>
-                     {todaysWorkout.exercises.length} exercises • {todaysWorkout.duration} minutes • Intermediate
+                     {todaysWorkout ? `${todaysWorkout.exercises.length} exercises • ${todaysWorkout.duration} minutes • ${todaysWorkout.difficulty}` : "Create a workout plan using your gym equipment"}
                    </FitnessCardDescription>
                  </div>
                   <FitnessButton size="icon" variant="secondary">
@@ -369,7 +379,7 @@ const Dashboard: React.FC = () => {
                 
                  <FitnessButton asChild className="w-full" size="lg">
                    <Link to="/workout">
-                     {todaysWorkout.completed ? "View Workout" : workoutProgress > 0 ? "Continue Workout" : "Start Workout"}
+                     {workoutProgress > 0 ? "Continue Workout" : "Start Workout"}
                    </Link>
                  </FitnessButton>
               </FitnessCardContent>
