@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { 
   TrendingUp, 
   Calendar, 
@@ -14,40 +14,208 @@ import { ProgressRing } from "@/components/ui/progress-ring"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useWorkout } from "@/hooks/useWorkout"
+import { useNutrition } from "@/hooks/useNutrition"
 
 const ProgressPage: React.FC = () => {
   const [timeRange, setTimeRange] = useState("30")
+  const { totalWorkouts, currentStreak, workoutHistory, totalCaloriesBurned } = useWorkout()
+  const { getDailyTotalsForDateRange } = useNutrition()
 
-  // Mock data
-  const stats = {
-    totalWorkouts: 24,
-    totalCaloriesBurned: 8650,
-    averageWorkoutTime: 42,
-    streak: 12,
-    weeklyGoalProgress: 80
+  // Calculate average workout time from history
+  const calculateAverageWorkoutTime = () => {
+    if (workoutHistory.length === 0) return 0
+    const totalDuration = workoutHistory.reduce((sum, workout) => sum + workout.duration, 0)
+    return Math.round(totalDuration / workoutHistory.length)
   }
 
-  const workoutHistory = [
-    { date: "Today", workout: "Upper Body Strength", duration: 45, calories: 380, completed: true },
-    { date: "Yesterday", workout: "HIIT Cardio", duration: 30, calories: 420, completed: true },
-    { date: "2 days ago", workout: "Lower Body Focus", duration: 50, calories: 310, completed: true },
-    { date: "3 days ago", workout: "Core & Flexibility", duration: 25, calories: 180, completed: true },
-    { date: "4 days ago", workout: "Full Body Circuit", duration: 40, calories: 350, completed: true }
-  ]
+  // Calculate this week's workouts
+  const calculateThisWeeksWorkouts = () => {
+    const today = new Date()
+    const startOfWeek = new Date(today)
+    startOfWeek.setDate(today.getDate() - today.getDay())
+    
+    return workoutHistory.filter(workout => {
+      const workoutDate = new Date(workout.date)
+      return workoutDate >= startOfWeek && workoutDate <= today && workout.completed
+    }).length
+  }
 
-  const achievements = [
-    { name: "First Week Complete", description: "Completed your first week of workouts", earned: true, date: "2 weeks ago" },
-    { name: "Consistency King", description: "10 days workout streak", earned: true, date: "3 days ago" },
-    { name: "Calorie Crusher", description: "Burned 5000+ calories", earned: true, date: "1 week ago" },
-    { name: "Monthly Goal", description: "Complete 20 workouts in a month", earned: false, progress: 75 },
-    { name: "Perfect Form", description: "Get 90%+ form score 5 times", earned: false, progress: 60 }
-  ]
+  // Calculate weekly goal progress
+  const calculateWeeklyProgress = () => {
+    const thisWeekWorkouts = calculateThisWeeksWorkouts()
+    const weeklyGoal = 5 // Target 5 workouts per week
+    return Math.round((thisWeekWorkouts / weeklyGoal) * 100)
+  }
 
-  const monthlyData = [
-    { month: "Jan", workouts: 18, calories: 6200 },
-    { month: "Feb", workouts: 22, calories: 7800 },
-    { month: "Mar", workouts: 24, calories: 8650 },
-  ]
+  // Real data from stores
+  const stats = {
+    totalWorkouts: totalWorkouts,
+    totalCaloriesBurned: totalCaloriesBurned,
+    averageWorkoutTime: calculateAverageWorkoutTime(),
+    streak: currentStreak,
+    weeklyGoalProgress: calculateWeeklyProgress()
+  }
+
+  // Format workout history for display
+  const formatWorkoutHistory = () => {
+    return workoutHistory.slice(0, 5).map(workout => {
+      const workoutDate = new Date(workout.date)
+      const today = new Date()
+      const yesterday = new Date(today)
+      yesterday.setDate(today.getDate() - 1)
+      
+      let displayDate = workoutDate.toLocaleDateString()
+      if (workoutDate.toDateString() === today.toDateString()) {
+        displayDate = "Today"
+      } else if (workoutDate.toDateString() === yesterday.toDateString()) {
+        displayDate = "Yesterday"
+      } else {
+        const diffTime = Math.abs(today.getTime() - workoutDate.getTime())
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+        if (diffDays <= 7) {
+          displayDate = `${diffDays} days ago`
+        }
+      }
+
+      return {
+        date: displayDate,
+        workout: workout.name,
+        duration: workout.duration,
+        calories: Math.round(workout.duration * 7), // Estimate 7 calories per minute
+        completed: workout.completed
+      }
+    })
+  }
+
+  // Get monthly data from workout history
+  const getMonthlyData = () => {
+    const monthlyStats: Record<string, { workouts: number; calories: number }> = {}
+    
+    workoutHistory.forEach(workout => {
+      const date = new Date(workout.date)
+      const monthKey = date.toLocaleDateString('en-US', { month: 'short' })
+      
+      if (!monthlyStats[monthKey]) {
+        monthlyStats[monthKey] = { workouts: 0, calories: 0 }
+      }
+      
+      if (workout.completed) {
+        monthlyStats[monthKey].workouts += 1
+        monthlyStats[monthKey].calories += Math.round(workout.duration * 7) // Estimate
+      }
+    })
+
+    // Get last 3 months or fill with current data
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const currentMonth = new Date().getMonth()
+    const last3Months = []
+    
+    for (let i = 2; i >= 0; i--) {
+      const monthIndex = (currentMonth - i + 12) % 12
+      const monthName = months[monthIndex]
+      last3Months.push({
+        month: monthName,
+        workouts: monthlyStats[monthName]?.workouts || 0,
+        calories: monthlyStats[monthName]?.calories || 0
+      })
+    }
+    
+    return last3Months
+  }
+
+  const workoutHistoryFormatted = formatWorkoutHistory()
+  const monthlyData = getMonthlyData()
+
+  // Generate achievements based on real data
+  const generateAchievements = () => {
+    const achievements = []
+    
+    // First Week Complete
+    if (totalWorkouts >= 5) {
+      achievements.push({
+        name: "First Week Complete",
+        description: "Completed your first week of workouts",
+        earned: true,
+        date: "Achievement unlocked!"
+      })
+    } else {
+      achievements.push({
+        name: "First Week Complete",
+        description: "Complete 5 workouts",
+        earned: false,
+        progress: Math.round((totalWorkouts / 5) * 100)
+      })
+    }
+
+    // Consistency Achievement
+    if (currentStreak >= 7) {
+      achievements.push({
+        name: "Consistency Champion",
+        description: `${currentStreak} days workout streak`,
+        earned: true,
+        date: "Keep it up!"
+      })
+    } else {
+      achievements.push({
+        name: "Consistency Champion",
+        description: "Maintain a 7-day workout streak",
+        earned: false,
+        progress: Math.round((currentStreak / 7) * 100)
+      })
+    }
+
+    // Calorie Crusher
+    if (stats.totalCaloriesBurned >= 1000) {
+      achievements.push({
+        name: "Calorie Crusher",
+        description: `Burned ${stats.totalCaloriesBurned}+ calories`,
+        earned: true,
+        date: "Amazing progress!"
+      })
+    } else {
+      achievements.push({
+        name: "Calorie Crusher",
+        description: "Burn 1000+ calories total",
+        earned: false,
+        progress: Math.round((stats.totalCaloriesBurned / 1000) * 100)
+      })
+    }
+
+    // Monthly Goal
+    const monthlyTarget = 20
+    achievements.push({
+      name: "Monthly Goal",
+      description: `Complete ${monthlyTarget} workouts in a month`,
+      earned: totalWorkouts >= monthlyTarget,
+      ...(totalWorkouts >= monthlyTarget 
+        ? { date: "Goal achieved!" }
+        : { progress: Math.round((totalWorkouts / monthlyTarget) * 100) }
+      )
+    })
+
+    // Workout Variety
+    const uniqueWorkouts = new Set(workoutHistory.map(w => w.name)).size
+    if (uniqueWorkouts >= 5) {
+      achievements.push({
+        name: "Variety Master",
+        description: `Tried ${uniqueWorkouts} different workout types`,
+        earned: true,
+        date: "Great variety!"
+      })
+    } else {
+      achievements.push({
+        name: "Variety Master",
+        description: "Try 5 different workout types",
+        earned: false,
+        progress: Math.round((uniqueWorkouts / 5) * 100)
+      })
+    }
+
+    return achievements
+  }
+
+  const achievements = generateAchievements()
 
   return (
     <div className="min-h-screen bg-background">
@@ -200,38 +368,45 @@ const ProgressPage: React.FC = () => {
                 </FitnessCardDescription>
               </FitnessCardHeader>
               
-              <FitnessCardContent>
-                <div className="space-y-4">
-                  {workoutHistory.map((workout, index) => (
-                    <div 
-                      key={index}
-                      className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-2 h-2 bg-primary rounded-full" />
-                        <div>
-                          <p className="font-medium">{workout.workout}</p>
-                          <p className="text-sm text-muted-foreground">{workout.date}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                        <div className="text-center">
-                          <div className="font-medium text-foreground">{workout.duration}</div>
-                          <div>minutes</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="font-medium text-foreground">{workout.calories}</div>
-                          <div>calories</div>
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          Completed
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </FitnessCardContent>
+               <FitnessCardContent>
+                 <div className="space-y-4">
+                   {workoutHistoryFormatted.length > 0 ? (
+                     workoutHistoryFormatted.map((workout, index) => (
+                       <div 
+                         key={index}
+                         className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                       >
+                         <div className="flex items-center gap-4">
+                           <div className="w-2 h-2 bg-primary rounded-full" />
+                           <div>
+                             <p className="font-medium">{workout.workout}</p>
+                             <p className="text-sm text-muted-foreground">{workout.date}</p>
+                           </div>
+                         </div>
+                         
+                         <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                           <div className="text-center">
+                             <div className="font-medium text-foreground">{workout.duration}</div>
+                             <div>minutes</div>
+                           </div>
+                           <div className="text-center">
+                             <div className="font-medium text-foreground">{workout.calories}</div>
+                             <div>calories</div>
+                           </div>
+                           <Badge variant="outline" className="text-xs">
+                             {workout.completed ? "Completed" : "Incomplete"}
+                           </Badge>
+                         </div>
+                       </div>
+                     ))
+                   ) : (
+                     <div className="text-center py-8 text-muted-foreground">
+                       <p>No workout history available yet.</p>
+                       <p className="text-sm">Start your first workout to see your progress here!</p>
+                     </div>
+                   )}
+                 </div>
+               </FitnessCardContent>
             </FitnessCard>
           </TabsContent>
 

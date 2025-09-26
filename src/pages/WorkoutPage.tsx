@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 import { 
   Play, 
@@ -20,29 +20,66 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { VideoPlayer } from "@/components/ui/video-player"
 import { AIWorkoutGenerator } from "@/components/AIWorkoutGenerator"
+import { useWorkout } from "@/hooks/useWorkout"
 import gymImage from "@/assets/gym-workout.jpg"
 
 const WorkoutPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null)
+  const { currentWorkout, workoutHistory } = useWorkout()
 
-  // Mock data
-  const todaysWorkout = {
-    name: "Upper Body Strength",
-    duration: 45,
-    exercises: 6,
-    difficulty: "Intermediate",
-    completed: 65,
-    exercises_list: [
-      { name: "Push-ups", sets: 3, reps: 12, completed: true },
-      { name: "Bench Press", sets: 4, reps: 8, completed: true },
-      { name: "Dumbbell Rows", sets: 3, reps: 10, completed: true },
-      { name: "Shoulder Press", sets: 3, reps: 10, completed: false },
-      { name: "Tricep Dips", sets: 3, reps: 15, completed: false },
-      { name: "Pull-ups", sets: 3, reps: 8, completed: false }
-    ]
+  // Get today's workout from current workout or recent history
+  const getTodaysWorkout = () => {
+    const today = new Date().toDateString()
+    const todaysWorkout = workoutHistory.find(workout => 
+      new Date(workout.date).toDateString() === today
+    )
+    
+    if (todaysWorkout) {
+      return {
+        name: todaysWorkout.name,
+        duration: todaysWorkout.duration,
+        exercises: todaysWorkout.exercises?.length || 0,
+        difficulty: todaysWorkout.difficulty || "Intermediate",
+        completed: todaysWorkout.exercises ? 
+          Math.round((todaysWorkout.exercises.filter(ex => ex.completed).length / todaysWorkout.exercises.length) * 100) : 0,
+        exercises_list: todaysWorkout.exercises || []
+      }
+    }
+    
+    if (currentWorkout) {
+      return {
+        name: currentWorkout.name || "Today's Workout",
+        duration: currentWorkout.duration || 45,
+        exercises: currentWorkout.exercises?.length || 0,
+        difficulty: currentWorkout.difficulty || "Intermediate",
+        completed: currentWorkout.exercises ? 
+          Math.round((currentWorkout.exercises.filter(ex => ex.completed).length / currentWorkout.exercises.length) * 100) : 0,
+        exercises_list: currentWorkout.exercises || []
+      }
+    }
+
+    // Default workout if nothing available
+    return {
+      name: "Upper Body Strength",
+      duration: 45,
+      exercises: 6,
+      difficulty: "Intermediate",
+      completed: 0,
+      exercises_list: [
+        { name: "Push-ups", sets: 3, reps: 12, completed: false },
+        { name: "Bench Press", sets: 4, reps: 8, completed: false },
+        { name: "Dumbbell Rows", sets: 3, reps: 10, completed: false },
+        { name: "Shoulder Press", sets: 3, reps: 10, completed: false },
+        { name: "Tricep Dips", sets: 3, reps: 15, completed: false },
+        { name: "Pull-ups", sets: 3, reps: 8, completed: false }
+      ]
+    }
   }
 
+  const todaysWorkout = getTodaysWorkout()
+
+  // Real workout plans (keeping some structure but making it more realistic)
   const workoutPlans = [
     {
       id: 1,
@@ -219,13 +256,13 @@ const WorkoutPage: React.FC = () => {
                   ))}
                 </div>
 
-                <div className="flex gap-3">
-                  <FitnessButton asChild className="flex-1" size="lg">
-                    <Link to="/workout/session/today">
-                      <Play className="w-4 h-4" />
-                      Continue Workout
-                    </Link>
-                  </FitnessButton>
+                 <div className="flex gap-3">
+                   <FitnessButton asChild className="flex-1" size="lg">
+                     <Link to="/workout/session/today">
+                       <Play className="w-4 h-4" />
+                       {todaysWorkout.completed > 0 ? "Continue Workout" : "Start Workout"}
+                     </Link>
+                   </FitnessButton>
                   <FitnessButton asChild variant="outline" size="lg">
                     <Link to="/form-check">
                       Form Check

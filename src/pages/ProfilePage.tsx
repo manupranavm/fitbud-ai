@@ -1,5 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
+import { useWorkout } from '@/hooks/useWorkout'
+import { supabase } from '@/integrations/supabase/client'
 import { FitnessCard } from '@/components/ui/fitness-card'
 import { FitnessButton } from '@/components/ui/fitness-button'
 import { Input } from '@/components/ui/input'
@@ -10,41 +12,142 @@ import { Separator } from '@/components/ui/separator'
 import { User, Mail, Calendar, Target, Edit3, Save, X } from 'lucide-react'
 import { toast } from 'sonner'
 
+interface ProfileData {
+  height?: number
+  weight?: number
+  age?: number
+  workout_preference?: string
+  bmi?: number
+}
+
 const ProfilePage: React.FC = () => {
   const { user, updateProfile } = useAuth()
+  const { totalWorkouts, currentStreak, workoutHistory } = useWorkout()
   const [isEditing, setIsEditing] = useState(false)
+  const [profileData, setProfileData] = useState<ProfileData | null>(null)
   const [formData, setFormData] = useState({
     name: user?.user_metadata?.full_name || '',
     email: user?.email || '',
-    height: '175',
-    weight: '70',
-    age: '25',
-    fitnessGoal: 'Build Muscle'
+    height: '',
+    weight: '',
+    age: '',
+    fitnessGoal: ''
   })
+
+  // Load profile data from database
+  useEffect(() => {
+    loadProfileData()
+  }, [user])
+
+  // Update form data when profile data loads
+  useEffect(() => {
+    if (profileData) {
+      setFormData({
+        name: user?.user_metadata?.full_name || '',
+        email: user?.email || '',
+        height: profileData.height?.toString() || '',
+        weight: profileData.weight?.toString() || '',
+        age: profileData.age?.toString() || '',
+        fitnessGoal: profileData.workout_preference || ''
+      })
+    }
+  }, [profileData, user])
+
+  const loadProfileData = async () => {
+    if (!user) return
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading profile:', error)
+        return
+      }
+
+      setProfileData(data)
+    } catch (error) {
+      console.error('Error loading profile:', error)
+    }
+  }
 
   const handleSave = async () => {
     try {
+      // Update user metadata if needed
       await updateProfile({
         email: formData.email
       })
+
+      // Update or insert profile data
+      if (user) {
+        const profileUpdate = {
+          id: user.id,
+          email: formData.email,
+          full_name: formData.name,
+          height: formData.height ? parseFloat(formData.height) : null,
+          weight: formData.weight ? parseFloat(formData.weight) : null,
+          age: formData.age ? parseInt(formData.age) : null,
+          workout_preference: formData.fitnessGoal || null,
+          bmi: formData.height && formData.weight ? 
+            parseFloat(formData.weight) / Math.pow(parseFloat(formData.height) / 100, 2) : null
+        }
+
+        const { error } = await supabase
+          .from('profiles')
+          .upsert(profileUpdate)
+
+        if (error) throw error
+      }
+
       setIsEditing(false)
       toast.success('Profile updated successfully!')
+      loadProfileData() // Reload the data
     } catch (error) {
+      console.error('Error updating profile:', error)
       toast.error('Failed to update profile')
     }
   }
 
   const handleCancel = () => {
-    setFormData({
-      name: user?.user_metadata?.full_name || '',
-      email: user?.email || '',
-      height: '175',
-      weight: '70',
-      age: '25',
-      fitnessGoal: 'Build Muscle'
-    })
+    if (profileData) {
+      setFormData({
+        name: user?.user_metadata?.full_name || '',
+        email: user?.email || '',
+        height: profileData.height?.toString() || '',
+        weight: profileData.weight?.toString() || '',
+        age: profileData.age?.toString() || '',
+        fitnessGoal: profileData.workout_preference || ''
+      })
+    }
     setIsEditing(false)
   }
+
+  // Calculate this week's workouts
+  const calculateThisWeeksWorkouts = () => {
+    const today = new Date()
+    const startOfWeek = new Date(today)
+    startOfWeek.setDate(today.getDate() - today.getDay())
+    
+    return workoutHistory.filter(workout => {
+      const workoutDate = new Date(workout.date)
+      return workoutDate >= startOfWeek && workoutDate <= today && workout.completed
+    }).length
+  }
+
+  // Calculate average hours per week
+  const calculateAverageHoursPerWeek = () => {
+    if (workoutHistory.length === 0) return 0
+    const totalMinutes = workoutHistory.reduce((sum, workout) => sum + workout.duration, 0)
+    const totalHours = totalMinutes / 60
+    const totalWeeks = Math.max(1, Math.ceil(workoutHistory.length / 5)) // Assume 5 workouts per week target
+    return (totalHours / totalWeeks).toFixed(1)
+  }
+
+  const thisWeeksWorkouts = calculateThisWeeksWorkouts()
+  const averageHoursPerWeek = calculateAverageHoursPerWeek()
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -216,24 +319,24 @@ const ProfilePage: React.FC = () => {
               Activity Summary
             </h3>
             
-            <div className="grid gap-4 md:grid-cols-4">
-              <div className="text-center p-4 rounded-lg bg-muted/30">
-                <p className="text-2xl font-bold text-primary">12</p>
-                <p className="text-sm text-muted-foreground">Workouts Completed</p>
-              </div>
-              <div className="text-center p-4 rounded-lg bg-muted/30">
-                <p className="text-2xl font-bold text-primary">3</p>
-                <p className="text-sm text-muted-foreground">This Week</p>
-              </div>
-              <div className="text-center p-4 rounded-lg bg-muted/30">
-                <p className="text-2xl font-bold text-primary">45</p>
-                <p className="text-sm text-muted-foreground">Days Active</p>
-              </div>
-              <div className="text-center p-4 rounded-lg bg-muted/30">
-                <p className="text-2xl font-bold text-primary">2.5</p>
-                <p className="text-sm text-muted-foreground">Avg. Hours/Week</p>
-              </div>
-            </div>
+             <div className="grid gap-4 md:grid-cols-4">
+               <div className="text-center p-4 rounded-lg bg-muted/30">
+                 <p className="text-2xl font-bold text-primary">{totalWorkouts}</p>
+                 <p className="text-sm text-muted-foreground">Workouts Completed</p>
+               </div>
+               <div className="text-center p-4 rounded-lg bg-muted/30">
+                 <p className="text-2xl font-bold text-primary">{thisWeeksWorkouts}</p>
+                 <p className="text-sm text-muted-foreground">This Week</p>
+               </div>
+               <div className="text-center p-4 rounded-lg bg-muted/30">
+                 <p className="text-2xl font-bold text-primary">{currentStreak}</p>
+                 <p className="text-sm text-muted-foreground">Days Active</p>
+               </div>
+               <div className="text-center p-4 rounded-lg bg-muted/30">
+                 <p className="text-2xl font-bold text-primary">{averageHoursPerWeek}</p>
+                 <p className="text-sm text-muted-foreground">Avg. Hours/Week</p>
+               </div>
+             </div>
           </div>
         </FitnessCard>
       </div>
