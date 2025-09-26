@@ -17,7 +17,7 @@ import { FitnessCard } from "@/components/ui/fitness-card"
 
 const navigationItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
-  { href: "/workout", icon: Dumbbell, label: "Workout" },
+  // { href: "/workout", icon: Dumbbell, label: "Workout" },
   { href: "/gym-equipment", icon: Settings, label: "Gym Equipment" },
   { href: "/form-monitor", icon: Camera, label: "Form Monitor" },
   { href: "/nutrition", icon: UtensilsCrossed, label: "Nutrition" },
