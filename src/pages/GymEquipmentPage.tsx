@@ -311,13 +311,35 @@ const GymEquipmentPage: React.FC = () => {
       if (error) throw error;
 
       if (data.success) {
+        const fullEquipmentList = [...defaultEquipment, ...equipmentList];
         setWorkoutPlan(data.plan);
-        setCurrentEquipment([...defaultEquipment, ...equipmentList]);
+        setCurrentEquipment(fullEquipmentList);
+        
+        // Save the workout plan to database
+        const { error: saveError } = await supabase
+          .from('equipment_workouts')
+          .insert({
+            user_id: user.id,
+            plan_name: planName,
+            equipment_list: fullEquipmentList,
+            workout_plan: data.plan
+          });
+
+        if (saveError) {
+          console.error('Error saving workout plan:', saveError);
+          toast({
+            title: "Save Warning",
+            description: "Plan generated but not saved to your library.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Workout Plan Generated & Saved!",
+            description: "Your personalized 7-day plan is ready and saved to your library",
+          });
+        }
+        
         setActiveTab("plan");
-        toast({
-          title: "Workout Plan Generated!",
-          description: "Your personalized 7-day plan is ready",
-        });
       } else {
         throw new Error(data.error || 'Failed to generate workout plan');
       }
@@ -349,10 +371,29 @@ const GymEquipmentPage: React.FC = () => {
 
       if (data.success) {
         setWorkoutPlan(data.plan);
-        toast({
-          title: "Plan Shuffled!",
-          description: "Generated a new variation of your workout plan",
-        });
+        
+        // Save the shuffled workout plan to database
+        const { error: saveError } = await supabase
+          .from('equipment_workouts')
+          .insert({
+            user_id: user.id,
+            plan_name: planName + " (Shuffled)",
+            equipment_list: currentEquipment,
+            workout_plan: data.plan
+          });
+
+        if (saveError) {
+          console.error('Error saving shuffled workout plan:', saveError);
+          toast({
+            title: "Plan Shuffled!",
+            description: "Generated a new variation but not saved to library.",
+          });
+        } else {
+          toast({
+            title: "Plan Shuffled & Saved!",
+            description: "Generated a new variation and saved to your library",
+          });
+        }
       }
     } catch (error) {
       console.error('Error shuffling plan:', error);
