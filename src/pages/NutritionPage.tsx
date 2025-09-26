@@ -273,28 +273,38 @@ const adjustCalories = (newPortion: number) => {
   }, [adjustedResult]);
 
   const handleAddToDiary = async () => {
-    if (adjustedResult) {
-      try {
-        await addFood({
-          food_name: adjustedResult.foodName,
-          calories: editableValues.calories,
-          protein: editableValues.protein,
-          carbs: editableValues.carbs,
-          fat: editableValues.fat,
-          portion_size: `${portionSize}% of standard portion`,
-          meal_type: 'scanned'
-        })
-        toast.success("Food added to diary!")
-        setScanResult(null)
-        setPortionSize(100)
-        // Reset file input
-        if (fileInputRef.current) {
-          fileInputRef.current.value = ''
-        }
-      } catch (error) {
-        toast.error("Failed to add food to diary")
-        console.error('Error adding food:', error)
+    // Allow adding either from scan result or manual input
+    const foodData = scanResult ? {
+      food_name: scanResult.foodName,
+      calories: editableValues.calories,
+      protein: editableValues.protein,
+      carbs: editableValues.carbs,
+      fat: editableValues.fat,
+      portion_size: `${portionSize}% of standard portion`,
+      meal_type: 'scanned'
+    } : {
+      food_name: "Manual Entry",
+      calories: editableValues.calories,
+      protein: editableValues.protein,
+      carbs: editableValues.carbs,
+      fat: editableValues.fat,
+      portion_size: "Manual input",
+      meal_type: 'manual'
+    };
+
+    try {
+      await addFood(foodData)
+      toast.success("Food added to diary!")
+      setScanResult(null)
+      setPortionSize(100)
+      setEditableValues({ calories: 0, protein: 0, carbs: 0, fat: 0 })
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
       }
+    } catch (error) {
+      toast.error("Failed to add food to diary")
+      console.error('Error adding food:', error)
     }
   }
 
@@ -633,19 +643,19 @@ const adjustCalories = (newPortion: number) => {
                 </FitnessCard>
               </div>
 
-              {/* Results and Adjustment */}
-              {scanResult && (
-                <div className="space-y-6">
-                  <FitnessCard variant="food" className="animate-slide-up">
-                    <FitnessCardHeader>
-                      <FitnessCardTitle>Nutrition Information</FitnessCardTitle>
-                      <FitnessCardDescription>
-                        Adjust portion size to match your actual serving
-                      </FitnessCardDescription>
-                    </FitnessCardHeader>
-                    
-                    <FitnessCardContent>
-                      {/* Portion Slider */}
+              {/* Results and Adjustment - Always show nutrition input */}
+              <div className="space-y-6">
+                <FitnessCard variant="food" className="animate-slide-up">
+                  <FitnessCardHeader>
+                    <FitnessCardTitle>Nutrition Information</FitnessCardTitle>
+                    <FitnessCardDescription>
+                      {scanResult ? "Adjust portion size to match your actual serving" : "Enter nutrition values manually"}
+                    </FitnessCardDescription>
+                  </FitnessCardHeader>
+                  
+                  <FitnessCardContent>
+                    {/* Portion Slider - Only show if there's a scan result */}
+                    {scanResult && (
                       <div className="space-y-4 mb-6">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium">Portion Size</span>
@@ -663,68 +673,73 @@ const adjustCalories = (newPortion: number) => {
                           {adjustedResult?.portion}
                         </p>
                       </div>
+                    )}
 
-                      {/* Nutrition Facts */}
-                      <div className="space-y-4">
-                        <div className="text-center p-4 bg-primary/10 rounded-lg">
+                    {/* Nutrition Facts - Always editable */}
+                    <div className="space-y-4">
+                      <div className="text-center p-4 bg-primary/10 rounded-lg">
+                        <Input
+                          type="number"
+                          value={editableValues.calories || ''}
+                          onChange={(e) => setEditableValues(prev => ({ ...prev, calories: Number(e.target.value) || 0 }))}
+                          className="text-2xl font-bold text-primary text-center border border-border/50 hover:border-border focus:border-primary bg-background/50"
+                          min="0"
+                          placeholder="Enter calories"
+                        />
+                        <div className="text-sm text-muted-foreground mt-1">calories</div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-4 text-center">
+                        <div className="p-3 bg-muted/50 rounded-lg">
                           <Input
                             type="number"
-                            value={editableValues.calories}
-                            onChange={(e) => setEditableValues(prev => ({ ...prev, calories: Number(e.target.value) }))}
-                            className="text-2xl font-bold text-primary text-center border border-border/50 hover:border-border focus:border-primary bg-background/50"
+                            value={editableValues.protein || ''}
+                            onChange={(e) => setEditableValues(prev => ({ ...prev, protein: Number(e.target.value) || 0 }))}
+                            className="font-semibold text-center border border-border/50 hover:border-border focus:border-primary bg-background/50"
                             min="0"
-                            placeholder="Enter calories"
+                            step="0.1"
+                            placeholder="0"
                           />
-                          <div className="text-sm text-muted-foreground mt-1">calories</div>
+                          <div className="text-xs text-muted-foreground mt-1">Protein (g)</div>
                         </div>
-
-                        <div className="grid grid-cols-3 gap-4 text-center">
-                          <div className="p-3 bg-muted/50 rounded-lg">
-                            <Input
-                              type="number"
-                              value={editableValues.protein}
-                              onChange={(e) => setEditableValues(prev => ({ ...prev, protein: Number(e.target.value) }))}
-                              className="font-semibold text-center border border-border/50 hover:border-border focus:border-primary bg-background/50"
-                              min="0"
-                              step="0.1"
-                              placeholder="0"
-                            />
-                            <div className="text-xs text-muted-foreground mt-1">Protein (g)</div>
-                          </div>
-                          <div className="p-3 bg-muted/50 rounded-lg">
-                            <Input
-                              type="number"
-                              value={editableValues.carbs}
-                              onChange={(e) => setEditableValues(prev => ({ ...prev, carbs: Number(e.target.value) }))}
-                              className="font-semibold text-center border border-border/50 hover:border-border focus:border-primary bg-background/50"
-                              min="0"
-                              step="0.1"
-                              placeholder="0"
-                            />
-                            <div className="text-xs text-muted-foreground mt-1">Carbs (g)</div>
-                          </div>
-                          <div className="p-3 bg-muted/50 rounded-lg">
-                            <Input
-                              type="number"
-                              value={editableValues.fat}
-                              onChange={(e) => setEditableValues(prev => ({ ...prev, fat: Number(e.target.value) }))}
-                              className="font-semibold text-center border border-border/50 hover:border-border focus:border-primary bg-background/50"
-                              min="0"
-                              step="0.1"
-                              placeholder="0"
-                            />
-                            <div className="text-xs text-muted-foreground mt-1">Fat (g)</div>
-                          </div>
+                        <div className="p-3 bg-muted/50 rounded-lg">
+                          <Input
+                            type="number"
+                            value={editableValues.carbs || ''}
+                            onChange={(e) => setEditableValues(prev => ({ ...prev, carbs: Number(e.target.value) || 0 }))}
+                            className="font-semibold text-center border border-border/50 hover:border-border focus:border-primary bg-background/50"
+                            min="0"
+                            step="0.1"
+                            placeholder="0"
+                          />
+                          <div className="text-xs text-muted-foreground mt-1">Carbs (g)</div>
                         </div>
-
-                        <FitnessButton onClick={handleAddToDiary} className="w-full" size="lg">
-                          Add to Diary
-                        </FitnessButton>
+                        <div className="p-3 bg-muted/50 rounded-lg">
+                          <Input
+                            type="number"
+                            value={editableValues.fat || ''}
+                            onChange={(e) => setEditableValues(prev => ({ ...prev, fat: Number(e.target.value) || 0 }))}
+                            className="font-semibold text-center border border-border/50 hover:border-border focus:border-primary bg-background/50"
+                            min="0"
+                            step="0.1"
+                            placeholder="0"
+                          />
+                          <div className="text-xs text-muted-foreground mt-1">Fat (g)</div>
+                        </div>
                       </div>
-                    </FitnessCardContent>
-                  </FitnessCard>
-                </div>
-              )}
+
+                      <FitnessButton 
+                        onClick={handleAddToDiary} 
+                        className="w-full" 
+                        size="lg"
+                        disabled={editableValues.calories === 0}
+                      >
+                        Add to Diary
+                      </FitnessButton>
+                    </div>
+                  </FitnessCardContent>
+                </FitnessCard>
+              </div>
             </div>
           </TabsContent>
 
