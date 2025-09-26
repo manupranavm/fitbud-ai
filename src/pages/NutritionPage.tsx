@@ -260,17 +260,23 @@ const adjustCalories = (newPortion: number) => {
 
   const adjustedResult = adjustCalories(portionSize)
 
-  // Update editable values when scan result or portion changes
+  // Update editable values when scan result changes, but only if user hasn't manually edited
   useEffect(() => {
-    if (adjustedResult) {
-      setEditableValues({
-        calories: adjustedResult.calories,
-        protein: adjustedResult.macros.protein,
-        carbs: adjustedResult.macros.carbs,
-        fat: adjustedResult.macros.fat
-      });
+    if (adjustedResult && scanResult) {
+      // Only auto-update if all values are currently 0 (haven't been manually edited)
+      const hasManualInput = editableValues.calories > 0 || editableValues.protein > 0 || 
+                            editableValues.carbs > 0 || editableValues.fat > 0;
+      
+      if (!hasManualInput) {
+        setEditableValues({
+          calories: adjustedResult.calories,
+          protein: adjustedResult.macros.protein,
+          carbs: adjustedResult.macros.carbs,
+          fat: adjustedResult.macros.fat
+        });
+      }
     }
-  }, [adjustedResult]);
+  }, [adjustedResult, scanResult]);
 
   const handleAddToDiary = async () => {
     // Allow adding either from scan result or manual input
