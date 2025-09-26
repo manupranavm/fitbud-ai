@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 import { 
   TrendingUp, 
@@ -25,32 +25,93 @@ import { Badge } from "@/components/ui/badge"
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth()
-  const { totalWorkouts, currentStreak, workoutHistory } = useWorkout()
-  const { getTodaysTotals, goals } = useNutrition()
+  const { totalWorkouts, currentStreak, workoutHistory, currentWorkout } = useWorkout()
+  const { getTodaysTotals, goals, loadTodaysFoods } = useNutrition()
   const [showFormMonitor, setShowFormMonitor] = useState(false)
+  
+  // Load today's nutrition data on component mount
+  useEffect(() => {
+    loadTodaysFoods()
+  }, [loadTodaysFoods])
   
   // Get real data from stores
   const todaysTotals = getTodaysTotals()
   
-  // Calculate workout progress (mock for today's workout)
-  const workoutProgress = 65
+  // Calculate real workout progress based on current workout
+  const calculateWorkoutProgress = () => {
+    if (!currentWorkout || !currentWorkout.exercises) return 0
+    const totalExercises = currentWorkout.exercises.length
+    const completedExercises = currentWorkout.exercises.filter(ex => ex.completed).length
+    return Math.round((completedExercises / totalExercises) * 100)
+  }
+  
+  // Calculate this week's workouts
+  const calculateThisWeeksWorkouts = () => {
+    const today = new Date()
+    const startOfWeek = new Date(today)
+    startOfWeek.setDate(today.getDate() - today.getDay()) // Start of current week
+    
+    return workoutHistory.filter(workout => {
+      const workoutDate = new Date(workout.date)
+      return workoutDate >= startOfWeek && workoutDate <= today && workout.completed
+    }).length
+  }
+  
+  const workoutProgress = calculateWorkoutProgress()
+  const thisWeeksWorkouts = calculateThisWeeksWorkouts()
+  
   // Use real data from stores
   const todayStats = {
     workoutProgress: workoutProgress,
-    caloriesConsumed: todaysTotals.calories,
+    caloriesConsumed: Math.round(todaysTotals.calories),
     caloriesTarget: goals.calories,
-    workoutsThisWeek: Math.min(totalWorkouts, 5), // Cap at target
+    workoutsThisWeek: thisWeeksWorkouts,
     workoutTarget: 5
   }
 
-  const recentWorkouts = workoutHistory.slice(0, 3).map(workout => ({
-    name: workout.name,
-    date: new Date(workout.date).toLocaleDateString() === new Date().toLocaleDateString() ? "Today" : 
-          new Date(workout.date).toLocaleDateString() === new Date(Date.now() - 86400000).toLocaleDateString() ? "Yesterday" :
-          new Date(workout.date).toLocaleDateString(),
-    duration: `${workout.duration} min`,
-    completed: workout.completed
-  }))
+  // Get the most recent or current workout for today's workout display
+  const getTodaysWorkout = () => {
+    const today = new Date().toDateString()
+    const todaysWorkout = workoutHistory.find(workout => 
+      new Date(workout.date).toDateString() === today
+    )
+    
+    if (todaysWorkout) {
+      return {
+        name: todaysWorkout.name,
+        exercises: todaysWorkout.exercises || [],
+        duration: todaysWorkout.duration,
+        completed: todaysWorkout.completed
+      }
+    }
+    
+    // If no workout today, show current workout or default
+    if (currentWorkout) {
+      return {
+        name: currentWorkout.name || "Today's Workout",
+        exercises: currentWorkout.exercises || [],
+        duration: currentWorkout.duration || 45,
+        completed: false
+      }
+    }
+    
+    // Default fallback
+    return {
+      name: "Upper Body Strength",
+      exercises: [
+        { name: "Push-ups", sets: 3, reps: 12, completed: false },
+        { name: "Bench Press", sets: 4, reps: 8, completed: false },
+        { name: "Dumbbell Rows", sets: 3, reps: 10, completed: false },
+        { name: "Shoulder Press", sets: 3, reps: 10, completed: false },
+        { name: "Tricep Dips", sets: 3, reps: 15, completed: false },
+        { name: "Pull-ups", sets: 3, reps: 8, completed: false }
+      ],
+      duration: 45,
+      completed: false
+    }
+  }
+  
+  const todaysWorkout = getTodaysWorkout()
 
   const quickActions = [
     {
@@ -175,9 +236,9 @@ const Dashboard: React.FC = () => {
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground">workouts completed</p>
-                <Badge variant="secondary" className="text-xs">
-                  80% to goal
-                </Badge>
+                 <Badge variant="secondary" className="text-xs">
+                   {Math.round((todayStats.workoutsThisWeek / todayStats.workoutTarget) * 100)}% to goal
+                 </Badge>
               </div>
             </FitnessCardContent>
           </FitnessCard>
@@ -191,11 +252,15 @@ const Dashboard: React.FC = () => {
               </div>
             </FitnessCardHeader>
             <FitnessCardContent>
-              <div className="text-center space-y-2">
-                <div className="text-2xl font-bold">{currentStreak || 12}</div>
-                <p className="text-sm text-muted-foreground">days active</p>
-                <div className="text-xs text-yellow-500">🔥 Personal best!</div>
-              </div>
+               <div className="text-center space-y-2">
+                 <div className="text-2xl font-bold">{currentStreak}</div>
+                 <p className="text-sm text-muted-foreground">days active</p>
+                 {currentStreak > 0 && (
+                   <div className="text-xs text-yellow-500">
+                     {currentStreak >= 7 ? "🔥 Amazing streak!" : "Keep it up!"}
+                   </div>
+                 )}
+               </div>
             </FitnessCardContent>
           </FitnessCard>
         </div>
@@ -267,50 +332,46 @@ const Dashboard: React.FC = () => {
             <FitnessCard variant="workout" className="h-full">
               <FitnessCardHeader>
                 <div className="flex items-center justify-between">
-                  <div>
-                    <FitnessCardTitle>Upper Body Strength</FitnessCardTitle>
-                    <FitnessCardDescription>
-                      6 exercises • 45 minutes • Intermediate
-                    </FitnessCardDescription>
-                  </div>
+                 <div>
+                   <FitnessCardTitle>{todaysWorkout.name}</FitnessCardTitle>
+                   <FitnessCardDescription>
+                     {todaysWorkout.exercises.length} exercises • {todaysWorkout.duration} minutes • Intermediate
+                   </FitnessCardDescription>
+                 </div>
                   <FitnessButton size="icon" variant="secondary">
                     <Play className="w-4 h-4" />
                   </FitnessButton>
                 </div>
               </FitnessCardHeader>
               <FitnessCardContent>
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-center justify-between py-2 border-l-2 border-primary pl-3">
-                    <span className="text-sm font-medium">Push-ups</span>
-                    <span className="text-sm text-muted-foreground">3 × 12</span>
-                  </div>
-                  <div className="flex items-center justify-between py-2 border-l-2 border-muted pl-3">
-                    <span className="text-sm">Bench Press</span>
-                    <span className="text-sm text-muted-foreground">4 × 8</span>
-                  </div>
-                  <div className="flex items-center justify-between py-2 border-l-2 border-muted pl-3">
-                    <span className="text-sm">Dumbbell Rows</span>
-                    <span className="text-sm text-muted-foreground">3 × 10</span>
-                  </div>
-                  <div className="flex items-center justify-between py-2 border-l-2 border-muted pl-3">
-                    <span className="text-sm">Shoulder Press</span>
-                    <span className="text-sm text-muted-foreground">3 × 10</span>
-                  </div>
-                  <div className="flex items-center justify-between py-2 border-l-2 border-muted pl-3">
-                    <span className="text-sm">Tricep Dips</span>
-                    <span className="text-sm text-muted-foreground">3 × 15</span>
-                  </div>
-                  <div className="flex items-center justify-between py-2 border-l-2 border-muted pl-3">
-                    <span className="text-sm">Pull-ups</span>
-                    <span className="text-sm text-muted-foreground">3 × 8</span>
-                  </div>
-                </div>
+                 <div className="space-y-3 mb-6">
+                   {todaysWorkout.exercises.slice(0, 6).map((exercise, index) => (
+                     <div 
+                       key={index}
+                       className={`flex items-center justify-between py-2 border-l-2 pl-3 ${
+                         exercise.completed ? 'border-primary' : 'border-muted'
+                       }`}
+                     >
+                       <span className={`text-sm ${exercise.completed ? 'font-medium' : ''}`}>
+                         {exercise.name}
+                       </span>
+                       <span className="text-sm text-muted-foreground">
+                         {exercise.sets} × {exercise.reps}
+                       </span>
+                     </div>
+                   ))}
+                   {todaysWorkout.exercises.length > 6 && (
+                     <div className="text-center text-sm text-muted-foreground">
+                       +{todaysWorkout.exercises.length - 6} more exercises
+                     </div>
+                   )}
+                 </div>
                 
-                <FitnessButton asChild className="w-full" size="lg">
-                  <Link to="/workout/session/today">
-                    Continue Workout
-                  </Link>
-                </FitnessButton>
+                 <FitnessButton asChild className="w-full" size="lg">
+                   <Link to="/workout">
+                     {todaysWorkout.completed ? "View Workout" : workoutProgress > 0 ? "Continue Workout" : "Start Workout"}
+                   </Link>
+                 </FitnessButton>
               </FitnessCardContent>
             </FitnessCard>
           </div>
