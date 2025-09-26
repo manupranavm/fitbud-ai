@@ -18,6 +18,12 @@ interface PoseAnalysisResult {
   feedback: string;
   type: 'good' | 'warning' | 'error';
   confidence: number;
+  youtubeVideo?: {
+    title: string;
+    url: string;
+    thumbnail: string;
+  };
+  exerciseType?: string;
 }
 
 interface Keypoint {
@@ -92,6 +98,8 @@ const FormMonitorPage: React.FC = () => {
 
     const feedback = [];
     let overallScore = 1.0;
+    let exerciseType = 'general';
+    let youtubeVideo = null;
 
     // Key body landmarks (MoveNet format)
     const nose = keypoints[0];
@@ -108,72 +116,161 @@ const FormMonitorPage: React.FC = () => {
     const leftAnkle = keypoints[15];
     const rightAnkle = keypoints[16];
 
-    // Check for common form issues
+    // Detect exercise type based on pose
+    const hipHeight = leftHip && rightHip ? (leftHip.y + rightHip.y) / 2 : 0;
+    const kneeHeight = leftKnee && rightKnee ? (leftKnee.y + rightKnee.y) / 2 : 0;
+    const shoulderHeight = leftShoulder && rightShoulder ? (leftShoulder.y + rightShoulder.y) / 2 : 0;
     
-    // 1. Shoulder alignment
-    if (leftShoulder && rightShoulder) {
-      const shoulderDiff = Math.abs(leftShoulder.y - rightShoulder.y);
-      if (shoulderDiff > 30) {
-        feedback.push("Keep your shoulders level");
-        overallScore -= 0.2;
-      }
+    if (hipHeight > kneeHeight + 50) {
+      exerciseType = 'squat';
+    } else if (leftWrist && rightWrist && leftWrist.y < shoulderHeight && rightWrist.y < shoulderHeight) {
+      exerciseType = 'pushup';
+    } else {
+      exerciseType = 'general';
     }
 
-    // 2. Knee alignment during squats
-    if (leftKnee && rightKnee && leftAnkle && rightAnkle) {
-      const kneeWidth = Math.abs(leftKnee.x - rightKnee.x);
-      const ankleWidth = Math.abs(leftAnkle.x - rightAnkle.x);
+    // Enhanced form analysis based on exercise type
+    if (exerciseType === 'squat') {
+      // Squat-specific analysis
       
-      if (kneeWidth < ankleWidth * 0.8) {
-        feedback.push("Keep your knees aligned over your feet");
-        overallScore -= 0.15;
+      // 1. Knee alignment during squats
+      if (leftKnee && rightKnee && leftAnkle && rightAnkle) {
+        const kneeWidth = Math.abs(leftKnee.x - rightKnee.x);
+        const ankleWidth = Math.abs(leftAnkle.x - rightAnkle.x);
+        
+        if (kneeWidth < ankleWidth * 0.7) {
+          feedback.push("Keep your knees aligned over your feet - they're caving inward");
+          overallScore -= 0.3;
+          youtubeVideo = {
+            title: "How to Fix Knee Valgus (Knee Cave) During Squats",
+            url: "https://www.youtube.com/watch?v=ZcA0mIRnJiU",
+            thumbnail: "https://img.youtube.com/vi/ZcA0mIRnJiU/mqdefault.jpg"
+          };
+        }
       }
-    }
 
-    // 3. Back posture
-    if (leftShoulder && rightShoulder && leftHip && rightHip) {
-      const shoulderCenter = (leftShoulder.x + rightShoulder.x) / 2;
-      const hipCenter = (leftHip.x + rightHip.x) / 2;
-      const postureDiff = Math.abs(shoulderCenter - hipCenter);
-      
-      if (postureDiff > 40) {
-        feedback.push("Keep your back straight");
-        overallScore -= 0.25;
+      // 2. Squat depth
+      if (leftHip && rightHip && leftKnee && rightKnee) {
+        if (hipHeight < kneeHeight - 20) {
+          feedback.push("Excellent squat depth! Keep it up!");
+        } else if (hipHeight > kneeHeight + 30) {
+          feedback.push("Try to squat deeper - aim to get your hips below knee level");
+          overallScore -= 0.15;
+          youtubeVideo = {
+            title: "How to Improve Squat Depth and Mobility",
+            url: "https://www.youtube.com/watch?v=zvGr7wXQfwE",
+            thumbnail: "https://img.youtube.com/vi/zvGr7wXQfwE/mqdefault.jpg"
+          };
+        }
       }
-    }
 
-    // 4. Squat depth
-    if (leftHip && rightHip && leftKnee && rightKnee) {
-      const hipHeight = (leftHip.y + rightHip.y) / 2;
-      const kneeHeight = (leftKnee.y + rightKnee.y) / 2;
+      // 3. Back posture in squats
+      if (leftShoulder && rightShoulder && leftHip && rightHip) {
+        const shoulderCenter = (leftShoulder.x + rightShoulder.x) / 2;
+        const hipCenter = (leftHip.x + rightHip.x) / 2;
+        const postureDiff = Math.abs(shoulderCenter - hipCenter);
+        
+        if (postureDiff > 50) {
+          feedback.push("Keep your torso more upright - avoid leaning too far forward");
+          overallScore -= 0.25;
+          youtubeVideo = {
+            title: "Perfect Squat Form: How to Keep Your Back Straight",
+            url: "https://www.youtube.com/watch?v=ultWZbUMPL8",
+            thumbnail: "https://img.youtube.com/vi/ultWZbUMPL8/mqdefault.jpg"
+          };
+        }
+      }
+    } else if (exerciseType === 'pushup') {
+      // Push-up specific analysis
       
-      if (hipHeight < kneeHeight - 20) {
-        feedback.push("Good squat depth!");
-      } else if (hipHeight > kneeHeight + 30) {
-        feedback.push("Try to squat deeper");
-        overallScore -= 0.1;
+      // 1. Plank position
+      if (leftShoulder && rightShoulder && leftHip && rightHip) {
+        const shoulderHipAngle = Math.abs(shoulderHeight - hipHeight);
+        if (shoulderHipAngle > 30) {
+          feedback.push("Keep your body in a straight line - avoid sagging or piking");
+          overallScore -= 0.3;
+          youtubeVideo = {
+            title: "Perfect Push-Up Form: How to Keep Your Body Straight",
+            url: "https://www.youtube.com/watch?v=IODxDxX7oi4",
+            thumbnail: "https://img.youtube.com/vi/IODxDxX7oi4/mqdefault.jpg"
+          };
+        }
+      }
+
+      // 2. Hand placement
+      if (leftWrist && rightWrist && leftShoulder && rightShoulder) {
+        const wristWidth = Math.abs(leftWrist.x - rightWrist.x);
+        const shoulderWidth = Math.abs(leftShoulder.x - rightShoulder.x);
+        
+        if (wristWidth > shoulderWidth * 1.3) {
+          feedback.push("Hands are too wide - place them about shoulder-width apart");
+          overallScore -= 0.2;
+          youtubeVideo = {
+            title: "Push-Up Hand Placement: Finding the Perfect Position",
+            url: "https://www.youtube.com/watch?v=4dF1DOWzf20",
+            thumbnail: "https://img.youtube.com/vi/4dF1DOWzf20/mqdefault.jpg"
+          };
+        }
+      }
+    } else {
+      // General posture analysis
+      
+      // 1. Shoulder alignment
+      if (leftShoulder && rightShoulder) {
+        const shoulderDiff = Math.abs(leftShoulder.y - rightShoulder.y);
+        if (shoulderDiff > 30) {
+          feedback.push("Keep your shoulders level and avoid tilting");
+          overallScore -= 0.2;
+          youtubeVideo = {
+            title: "How to Fix Uneven Shoulders and Improve Posture",
+            url: "https://www.youtube.com/watch?v=FTV6UCh-yhs",
+            thumbnail: "https://img.youtube.com/vi/FTV6UCh-yhs/mqdefault.jpg"
+          };
+        }
+      }
+
+      // 2. Overall posture
+      if (leftShoulder && rightShoulder && leftHip && rightHip) {
+        const shoulderCenter = (leftShoulder.x + rightShoulder.x) / 2;
+        const hipCenter = (leftHip.x + rightHip.x) / 2;
+        const postureDiff = Math.abs(shoulderCenter - hipCenter);
+        
+        if (postureDiff > 40) {
+          feedback.push("Maintain better posture - keep your core engaged");
+          overallScore -= 0.15;
+          youtubeVideo = {
+            title: "Core Strengthening Exercises for Better Posture",
+            url: "https://www.youtube.com/watch?v=RqcOCBb4arc",
+            thumbnail: "https://img.youtube.com/vi/RqcOCBb4arc/mqdefault.jpg"
+          };
+        }
       }
     }
 
     // Determine feedback type and message
-    let result: PoseAnalysisResult;
+    let result: PoseAnalysisResult & { youtubeVideo?: any; exerciseType?: string };
     if (feedback.length === 0) {
       result = {
-        feedback: "Excellent form! Keep it up!",
+        feedback: `Excellent ${exerciseType} form! Keep it up!`,
         type: 'good' as const,
-        confidence: Math.min(overallScore, 0.98)
+        confidence: Math.min(overallScore, 0.98),
+        exerciseType
       };
     } else if (overallScore > 0.7) {
       result = {
         feedback: feedback[0],
         type: 'warning' as const,
-        confidence: overallScore
+        confidence: overallScore,
+        youtubeVideo,
+        exerciseType
       };
     } else {
       result = {
         feedback: feedback[0],
         type: 'error' as const,
-        confidence: overallScore
+        confidence: overallScore,
+        youtubeVideo,
+        exerciseType
       };
     }
 
@@ -218,8 +315,8 @@ const FormMonitorPage: React.FC = () => {
       console.log('Requesting camera access...');
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
-          width: { ideal: 640 },
-          height: { ideal: 480 },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
           facingMode: 'user'
         }
       });
@@ -227,8 +324,6 @@ const FormMonitorPage: React.FC = () => {
       console.log('Camera stream obtained:', stream);
       
       if (videoRef.current) {
-        console.log('FormMonitorPage: Setting video srcObject');
-        videoRef.current.srcObject = stream;
         streamRef.current = stream;
         
         // Reset session tracking
@@ -236,7 +331,7 @@ const FormMonitorPage: React.FC = () => {
         feedbackHistoryRef.current = [];
         setSessionStats({ duration: 0, goodFormPercentage: 0, feedbackCount: 0 });
         
-        // Add event listeners for debugging
+        // Add debugging listeners
         videoRef.current.onloadedmetadata = () => {
           console.log('FormMonitorPage: Video metadata loaded', {
             videoWidth: videoRef.current?.videoWidth,
@@ -250,18 +345,27 @@ const FormMonitorPage: React.FC = () => {
         
         videoRef.current.onplay = () => {
           console.log('FormMonitorPage: Video started playing');
+          setIsActive(true);
         };
         
-        const playVideo = async () => {
-          if (videoRef.current) {
+        videoRef.current.onerror = (e) => {
+          console.error('FormMonitorPage: Video error:', e);
+        };
+        
+        // Wait for DOM to be ready, then set source and play
+        setTimeout(async () => {
+          if (videoRef.current && stream && stream.active) {
+            console.log('FormMonitorPage: Setting video srcObject after delay');
+            videoRef.current.srcObject = stream;
+            
             try {
               console.log('FormMonitorPage: Attempting to play video...');
               await videoRef.current.play();
-              console.log('FormMonitorPage: Video is now playing');
-              setIsActive(true);
+              console.log('FormMonitorPage: Video is now playing successfully');
               
+              // Start pose analysis after video is playing
               setTimeout(() => {
-                if (detectorRef.current) {
+                if (detectorRef.current && isActive) {
                   console.log('FormMonitorPage: Starting pose analysis');
                   startPoseAnalysis();
                 }
@@ -269,12 +373,21 @@ const FormMonitorPage: React.FC = () => {
               
             } catch (playError) {
               console.error('FormMonitorPage: Error playing video:', playError);
+              toast({
+                title: "Video Error",
+                description: "Failed to start video preview. Try again.",
+                variant: "destructive",
+              });
             }
+          } else {
+            console.error('FormMonitorPage: Video ref not available or stream inactive');
+            toast({
+              title: "Camera Error",
+              description: "Camera setup failed. Please try again.",
+              variant: "destructive",
+            });
           }
-        };
-        
-        // Try to play immediately
-        playVideo();
+        }, 300);
       }
 
       // Increment trial count for non-authenticated users
@@ -519,7 +632,7 @@ const FormMonitorPage: React.FC = () => {
                     
                     {/* Live Feedback Overlay */}
                     {currentFeedback && (
-                      <div className="absolute top-4 left-4 right-4 z-20">
+                      <div className="absolute top-4 left-4 right-4 z-20 space-y-2">
                         <Badge 
                           variant={getFeedbackVariant(currentFeedback.type)}
                           className="flex items-center gap-2 p-3 text-sm backdrop-blur-sm"
@@ -530,6 +643,34 @@ const FormMonitorPage: React.FC = () => {
                             {Math.round(currentFeedback.confidence * 100)}%
                           </span>
                         </Badge>
+                        
+                        {/* YouTube Video Suggestion */}
+                        {(currentFeedback as any).youtubeVideo && (
+                          <div className="bg-black/70 backdrop-blur-sm rounded-lg p-3 border border-white/20">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Play className="w-4 h-4 text-primary" />
+                              <span className="text-white text-sm font-medium">Recommended Tutorial</span>
+                            </div>
+                            <a
+                              href={(currentFeedback as any).youtubeVideo.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex gap-3 hover:bg-white/10 rounded p-2 transition-colors"
+                            >
+                              <img
+                                src={(currentFeedback as any).youtubeVideo.thumbnail}
+                                alt={(currentFeedback as any).youtubeVideo.title}
+                                className="w-16 h-12 object-cover rounded flex-shrink-0"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <p className="text-white text-xs font-medium line-clamp-2">
+                                  {(currentFeedback as any).youtubeVideo.title}
+                                </p>
+                                <p className="text-white/70 text-xs mt-1">Watch on YouTube</p>
+                              </div>
+                            </a>
+                          </div>
+                        )}
                       </div>
                     )}
 
