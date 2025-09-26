@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FitnessButton } from "@/components/ui/fitness-button";
 import { FitnessCard, FitnessCardContent, FitnessCardDescription, FitnessCardHeader, FitnessCardTitle } from "@/components/ui/fitness-card";
 import { Input } from "@/components/ui/input";
@@ -66,6 +66,8 @@ const GymEquipmentPage: React.FC = () => {
   // Output states
   const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(null);
   const [currentEquipment, setCurrentEquipment] = useState<string[]>([]);
+  const [savedPlans, setSavedPlans] = useState<any[]>([]);
+  const [loadingPlans, setLoadingPlans] = useState(false);
 
   const defaultEquipment = [
     "Dumbbells", "Barbells", "Bench", "Treadmill", "Pull-up Bar",
@@ -407,6 +409,48 @@ const GymEquipmentPage: React.FC = () => {
     }
   };
 
+  // Load saved workout plans
+  const loadSavedPlans = async () => {
+    if (!user) return;
+    
+    setLoadingPlans(true);
+    try {
+      const { data, error } = await supabase
+        .from('equipment_workouts')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSavedPlans(data || []);
+    } catch (error) {
+      console.error('Error loading saved plans:', error);
+    } finally {
+      setLoadingPlans(false);
+    }
+  };
+
+  // Load a saved workout plan
+  const loadSavedPlan = (plan: any) => {
+    setWorkoutPlan(plan.workout_plan);
+    setCurrentEquipment(plan.equipment_list);
+    setPlanName(plan.plan_name);
+    setActiveTab("plan");
+    toast({
+      title: "Plan Loaded",
+      description: `Loaded "${plan.plan_name}" from your saved plans`,
+    });
+  };
+
+  // Load saved plans when user changes
+  useEffect(() => {
+    if (user) {
+      loadSavedPlans();
+    } else {
+      setSavedPlans([]);
+    }
+  }, [user]);
+
   const renderExercise = (exercise: Exercise, index: number) => (
     <div 
       key={index} 
@@ -684,6 +728,50 @@ const GymEquipmentPage: React.FC = () => {
                 </div>
               </FitnessCardContent>
             </FitnessCard>
+
+            {/* Saved Plans Section */}
+            {user && savedPlans.length > 0 && (
+              <FitnessCard className="animate-slide-up" style={{ animationDelay: "500ms" }}>
+                <FitnessCardHeader>
+                  <FitnessCardTitle>Your Saved Plans</FitnessCardTitle>
+                  <FitnessCardDescription>
+                    Load a previously generated workout plan
+                  </FitnessCardDescription>
+                </FitnessCardHeader>
+                <FitnessCardContent>
+                  <div className="space-y-3">
+                    {loadingPlans ? (
+                      <div className="flex items-center justify-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                      </div>
+                    ) : (
+                      savedPlans.slice(0, 3).map((plan) => (
+                        <div
+                          key={plan.id}
+                          className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border hover:bg-muted/70 transition-colors cursor-pointer"
+                          onClick={() => loadSavedPlan(plan)}
+                        >
+                          <div className="flex-1">
+                            <h4 className="font-medium text-sm">{plan.plan_name}</h4>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(plan.created_at).toLocaleDateString()} • {plan.equipment_list?.length || 0} equipment
+                            </p>
+                          </div>
+                          <FitnessButton variant="outline" size="sm">
+                            Load
+                          </FitnessButton>
+                        </div>
+                      ))
+                    )}
+                    {savedPlans.length > 3 && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        +{savedPlans.length - 3} more saved plans
+                      </p>
+                    )}
+                  </div>
+                </FitnessCardContent>
+              </FitnessCard>
+            )}
 
             <FitnessButton
               onClick={generateWorkoutPlan}
