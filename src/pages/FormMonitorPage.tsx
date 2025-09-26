@@ -227,7 +227,7 @@ const FormMonitorPage: React.FC = () => {
       console.log('Camera stream obtained:', stream);
       
       if (videoRef.current) {
-        console.log('Setting video srcObject');
+        console.log('FormMonitorPage: Setting video srcObject');
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
         
@@ -236,28 +236,45 @@ const FormMonitorPage: React.FC = () => {
         feedbackHistoryRef.current = [];
         setSessionStats({ duration: 0, goodFormPercentage: 0, feedbackCount: 0 });
         
+        // Add event listeners for debugging
+        videoRef.current.onloadedmetadata = () => {
+          console.log('FormMonitorPage: Video metadata loaded', {
+            videoWidth: videoRef.current?.videoWidth,
+            videoHeight: videoRef.current?.videoHeight
+          });
+        };
+        
+        videoRef.current.oncanplay = () => {
+          console.log('FormMonitorPage: Video can play');
+        };
+        
+        videoRef.current.onplay = () => {
+          console.log('FormMonitorPage: Video started playing');
+        };
+        
         const playVideo = async () => {
           if (videoRef.current) {
             try {
+              console.log('FormMonitorPage: Attempting to play video...');
               await videoRef.current.play();
-              console.log('Video is now playing');
+              console.log('FormMonitorPage: Video is now playing');
               setIsActive(true);
               
               setTimeout(() => {
                 if (detectorRef.current) {
-                  console.log('Starting pose analysis');
+                  console.log('FormMonitorPage: Starting pose analysis');
                   startPoseAnalysis();
                 }
               }, 1000);
               
             } catch (playError) {
-              console.error('Error playing video:', playError);
+              console.error('FormMonitorPage: Error playing video:', playError);
             }
           }
         };
         
-        videoRef.current.addEventListener('loadedmetadata', playVideo);
-        videoRef.current.addEventListener('canplay', playVideo);
+        // Try to play immediately
+        playVideo();
       }
 
       // Increment trial count for non-authenticated users

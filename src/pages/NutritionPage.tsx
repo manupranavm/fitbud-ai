@@ -124,8 +124,24 @@ const NutritionPage: React.FC = () => {
       setIsCameraOpen(true)
       
       if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream
-        await videoRef.current.play()
+        console.log('NutritionPage: Setting video srcObject');
+        videoRef.current.srcObject = mediaStream;
+        
+        // Add debugging
+        videoRef.current.onloadedmetadata = () => {
+          console.log('NutritionPage: Video metadata loaded');
+        };
+        
+        videoRef.current.oncanplay = () => {
+          console.log('NutritionPage: Video can play');
+        };
+        
+        try {
+          await videoRef.current.play();
+          console.log('NutritionPage: Video playing successfully');
+        } catch (err) {
+          console.error('NutritionPage: Error playing video:', err);
+        }
       }
     } catch (error) {
       console.error('Error accessing camera:', error)

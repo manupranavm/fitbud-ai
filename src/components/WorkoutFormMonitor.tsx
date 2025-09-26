@@ -201,10 +201,28 @@ const WorkoutFormMonitor: React.FC<WorkoutFormMonitorProps> = ({ onClose }) => {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
         
+        // Add event listeners for debugging
+        videoRef.current.onloadedmetadata = () => {
+          console.log('Video metadata loaded', {
+            videoWidth: videoRef.current?.videoWidth,
+            videoHeight: videoRef.current?.videoHeight,
+            readyState: videoRef.current?.readyState
+          });
+        };
+        
+        videoRef.current.oncanplay = () => {
+          console.log('Video can play');
+        };
+        
+        videoRef.current.onplay = () => {
+          console.log('Video started playing');
+        };
+        
         // Ensure video plays and becomes visible
         const playVideo = async () => {
           if (videoRef.current) {
             try {
+              console.log('Attempting to play video...');
               await videoRef.current.play();
               console.log('Video is now playing');
               setIsActive(true);
@@ -223,8 +241,8 @@ const WorkoutFormMonitor: React.FC<WorkoutFormMonitorProps> = ({ onClose }) => {
           }
         };
         
-        videoRef.current.addEventListener('loadedmetadata', playVideo);
-        videoRef.current.addEventListener('canplay', playVideo);
+        // Try to play immediately and also set up event listeners
+        playVideo();
       }
 
         // Increment trial count for non-authenticated users
