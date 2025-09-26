@@ -123,26 +123,39 @@ const NutritionPage: React.FC = () => {
       setStream(mediaStream)
       setIsCameraOpen(true)
       
-      if (videoRef.current) {
-        console.log('NutritionPage: Setting video srcObject');
-        videoRef.current.srcObject = mediaStream;
-        
-        // Add debugging
-        videoRef.current.onloadedmetadata = () => {
-          console.log('NutritionPage: Video metadata loaded');
-        };
-        
-        videoRef.current.oncanplay = () => {
-          console.log('NutritionPage: Video can play');
-        };
-        
-        try {
-          await videoRef.current.play();
-          console.log('NutritionPage: Video playing successfully');
-        } catch (err) {
-          console.error('NutritionPage: Error playing video:', err);
+      // Wait for the modal to render and video element to be available
+      setTimeout(() => {
+        if (videoRef.current && mediaStream) {
+          console.log('NutritionPage: Setting video srcObject');
+          videoRef.current.srcObject = mediaStream;
+          
+          const setupVideo = async () => {
+            if (!videoRef.current) return;
+            
+            try {
+              // Wait for video to load
+              await new Promise((resolve) => {
+                if (videoRef.current) {
+                  videoRef.current.onloadedmetadata = () => {
+                    console.log('NutritionPage: Video metadata loaded');
+                    resolve(true);
+                  };
+                }
+              });
+              
+              // Now try to play
+              await videoRef.current.play();
+              console.log('NutritionPage: Video playing successfully');
+            } catch (err) {
+              console.error('NutritionPage: Error playing video:', err);
+              toast.error("Camera preview failed to load");
+            }
+          };
+          
+          setupVideo();
         }
-      }
+      }, 100); // Small delay to ensure DOM is ready
+      
     } catch (error) {
       console.error('Error accessing camera:', error)
       toast.error("Unable to access camera. Please check permissions.")
