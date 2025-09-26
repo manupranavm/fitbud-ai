@@ -1,50 +1,44 @@
 import { createBrowserRouter } from 'react-router-dom';
-import { lazy, Suspense } from 'react';
 
 // Layouts
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
-// Pages
-const LandingPage = lazy(() => import('@/features/landing/LandingPage'));
-const AuthPage = lazy(() => import('@/features/auth/AuthPage'));
-const Dashboard = lazy(() => import('@/features/dashboard/Dashboard'));
-const WorkoutPage = lazy(() => import('@/features/workout/WorkoutPage'));
-const WorkoutSessionPage = lazy(() => import('@/features/workout/WorkoutSessionPage'));
-const WorkoutPlanDetailsPage = lazy(() => import('@/features/workout/WorkoutPlanDetailsPage'));
-const ExerciseDetailsPage = lazy(() => import('@/features/workout/ExerciseDetailsPage'));
-const GymEquipmentPage = lazy(() => import('@/features/gym/GymEquipmentPage'));
-const FormMonitorPage = lazy(() => import('@/features/form-monitor/FormMonitorPage'));
-const NutritionPage = lazy(() => import('@/features/nutrition/NutritionPage'));
-const ProgressPage = lazy(() => import('@/features/progress/ProgressPage'));
-const SettingsPage = lazy(() => import('@/features/profile/SettingsPage'));
-const ProfilePage = lazy(() => import('@/features/profile/ProfilePage'));
-const NotFound = lazy(() => import('@/features/errors/NotFound'));
-
-// Loading fallback
-const LoadingFallback = () => <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+// Import pages directly without lazy loading for now
+import AuthPage from '@/pages/AuthPage';
+import Dashboard from '@/pages/Dashboard';
+import ExerciseDetailsPage from '@/pages/ExerciseDetailsPage';
+import FormMonitorPage from '@/pages/FormMonitorPage';
+import GymEquipmentPage from '@/pages/GymEquipmentPage';
+import LandingPage from '@/pages/LandingPage';
+import NotFound from '@/pages/NotFound';
+import NutritionPage from '@/pages/NutritionPage';
+import ProfilePage from '@/pages/ProfilePage';
+import ProgressPage from '@/pages/ProgressPage';
+import SettingsPage from '@/pages/SettingsPage';
+import WorkoutPage from '@/pages/WorkoutPage';
+import WorkoutPlanDetailsPage from '@/pages/WorkoutPlanDetailsPage';
+import WorkoutSessionPage from '@/pages/WorkoutSessionPage';
 
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <Suspense fallback={<LoadingFallback />}><LandingPage /></Suspense>,
+    element: <LandingPage />,
   },
   {
     path: '/login',
-    element: <Suspense fallback={<LoadingFallback />}><AuthPage type="login" /></Suspense>,
+    element: <AuthPage type="login" />,
   },
   {
     path: '/signup',
-    element: <Suspense fallback={<LoadingFallback />}><AuthPage type="signup" /></Suspense>,
+    element: <AuthPage type="signup" />,
   },
   {
     path: '/dashboard',
     element: (
       <ProtectedRoute>
         <AppLayout>
-          <Suspense fallback={<LoadingFallback />}>
-            <Dashboard />
-          </Suspense>
+          <Dashboard />
         </AppLayout>
       </ProtectedRoute>
     ),
@@ -54,9 +48,7 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <AppLayout>
-          <Suspense fallback={<LoadingFallback />}>
-            <WorkoutPage />
-          </Suspense>
+          <WorkoutPage />
         </AppLayout>
       </ProtectedRoute>
     ),
@@ -65,9 +57,7 @@ export const router = createBrowserRouter([
     path: '/workout/session/:workoutId',
     element: (
       <ProtectedRoute>
-        <Suspense fallback={<LoadingFallback />}>
-          <WorkoutSessionPage />
-        </Suspense>
+        <WorkoutSessionPage />
       </ProtectedRoute>
     ),
   },
@@ -76,9 +66,7 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <AppLayout>
-          <Suspense fallback={<LoadingFallback />}>
-            <WorkoutPlanDetailsPage />
-          </Suspense>
+          <WorkoutPlanDetailsPage />
         </AppLayout>
       </ProtectedRoute>
     ),
@@ -87,9 +75,7 @@ export const router = createBrowserRouter([
     path: '/exercise/:exerciseName',
     element: (
       <ProtectedRoute>
-        <Suspense fallback={<LoadingFallback />}>
-          <ExerciseDetailsPage />
-        </Suspense>
+        <ExerciseDetailsPage />
       </ProtectedRoute>
     ),
   },
@@ -98,9 +84,7 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <AppLayout>
-          <Suspense fallback={<LoadingFallback />}>
-            <GymEquipmentPage />
-          </Suspense>
+          <GymEquipmentPage />
         </AppLayout>
       </ProtectedRoute>
     ),
@@ -109,9 +93,7 @@ export const router = createBrowserRouter([
     path: '/form-check',
     element: (
       <ProtectedRoute>
-        <Suspense fallback={<LoadingFallback />}>
-          <FormMonitorPage />
-        </Suspense>
+        <FormMonitorPage />
       </ProtectedRoute>
     ),
   },
@@ -119,9 +101,7 @@ export const router = createBrowserRouter([
     path: '/form-monitor',
     element: (
       <ProtectedRoute>
-        <Suspense fallback={<LoadingFallback />}>
-          <FormMonitorPage />
-        </Suspense>
+        <FormMonitorPage />
       </ProtectedRoute>
     ),
   },
@@ -130,9 +110,7 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <AppLayout>
-          <Suspense fallback={<LoadingFallback />}>
-            <NutritionPage />
-          </Suspense>
+          <NutritionPage />
         </AppLayout>
       </ProtectedRoute>
     ),
@@ -142,9 +120,7 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <AppLayout>
-          <Suspense fallback={<LoadingFallback />}>
-            <ProgressPage />
-          </Suspense>
+          <ProgressPage />
         </AppLayout>
       </ProtectedRoute>
     ),
@@ -154,9 +130,7 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <AppLayout>
-          <Suspense fallback={<LoadingFallback />}>
-            <SettingsPage />
-          </Suspense>
+          <SettingsPage />
         </AppLayout>
       </ProtectedRoute>
     ),
@@ -166,15 +140,13 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <AppLayout>
-          <Suspense fallback={<LoadingFallback />}>
-            <ProfilePage />
-          </Suspense>
+          <ProfilePage />
         </AppLayout>
       </ProtectedRoute>
     ),
   },
   {
     path: '*',
-    element: <Suspense fallback={<LoadingFallback />}><NotFound /></Suspense>,
+    element: <NotFound />,
   },
 ]);
