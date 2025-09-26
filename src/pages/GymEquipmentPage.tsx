@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Upload, Camera, Type, Shuffle, Play, Calendar, Clock, RotateCcw, Video, StopCircle, Target, Brain } from "lucide-react";
+import { Upload, Camera, Type, Shuffle, Play, Calendar, Clock, RotateCcw, Video, StopCircle, Target, Brain, Trash2 } from "lucide-react";
 import gymImage from "@/assets/gym-workout.jpg";
 
 interface Exercise {
@@ -442,6 +442,36 @@ const GymEquipmentPage: React.FC = () => {
     });
   };
 
+  // Delete a saved workout plan
+  const deleteSavedPlan = async (planId: string, planName: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent triggering the load action
+    
+    try {
+      const { error } = await supabase
+        .from('equipment_workouts')
+        .delete()
+        .eq('id', planId)
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+
+      // Remove from local state
+      setSavedPlans(prev => prev.filter(plan => plan.id !== planId));
+      
+      toast({
+        title: "Plan Deleted",
+        description: `"${planName}" has been removed from your saved plans`,
+      });
+    } catch (error) {
+      console.error('Error deleting plan:', error);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete the workout plan. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Load saved plans when user changes
   useEffect(() => {
     if (user) {
@@ -757,9 +787,18 @@ const GymEquipmentPage: React.FC = () => {
                               {new Date(plan.created_at).toLocaleDateString()} • {plan.equipment_list?.length || 0} equipment
                             </p>
                           </div>
-                          <FitnessButton variant="outline" size="sm">
-                            Load
-                          </FitnessButton>
+                          <div className="flex items-center gap-2">
+                            <FitnessButton variant="outline" size="sm">
+                              Load
+                            </FitnessButton>
+                            <FitnessButton 
+                              variant="destructive" 
+                              size="sm"
+                              onClick={(e) => deleteSavedPlan(plan.id, plan.plan_name, e)}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </FitnessButton>
+                          </div>
                         </div>
                       ))
                     )}
