@@ -68,6 +68,24 @@ const GymEquipmentPage: React.FC = () => {
   const [currentEquipment, setCurrentEquipment] = useState<string[]>([]);
   const [savedPlans, setSavedPlans] = useState<any[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(false);
+  // Handle deep link to today's plan section
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('goto') === 'today') {
+      // Switch to plan tab
+      setActiveTab('plan')
+      // Wait for tab content to render then scroll to today's day section
+      setTimeout(() => {
+        const today = new Date()
+        const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+        const id = `day-${dayNames[today.getDay()].toLowerCase()}`
+        const el = document.getElementById(id)
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 250)
+    }
+  }, [])
 
   const defaultEquipment = [
     "Dumbbells", "Barbells", "Bench", "Treadmill", "Pull-up Bar",
@@ -869,6 +887,7 @@ const GymEquipmentPage: React.FC = () => {
                 <div className="grid gap-6">
                   {Object.entries(workoutPlan.weekPlan).map(([day, dayPlan], index) => (
                     <FitnessCard 
+                      id={`day-${String(day).toLowerCase()}`}
                       key={day} 
                       variant="workout" 
                       className="animate-slide-up"
