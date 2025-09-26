@@ -34,6 +34,12 @@ const NutritionPage: React.FC = () => {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false)
   const [isCameraOpen, setIsCameraOpen] = useState(false)
   const [stream, setStream] = useState<MediaStream | null>(null)
+  const [editableValues, setEditableValues] = useState({
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0
+  })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -254,15 +260,27 @@ const adjustCalories = (newPortion: number) => {
 
   const adjustedResult = adjustCalories(portionSize)
 
+  // Update editable values when scan result or portion changes
+  useEffect(() => {
+    if (adjustedResult) {
+      setEditableValues({
+        calories: adjustedResult.calories,
+        protein: adjustedResult.macros.protein,
+        carbs: adjustedResult.macros.carbs,
+        fat: adjustedResult.macros.fat
+      });
+    }
+  }, [adjustedResult]);
+
   const handleAddToDiary = async () => {
     if (adjustedResult) {
       try {
         await addFood({
           food_name: adjustedResult.foodName,
-          calories: adjustedResult.calories,
-          protein: adjustedResult.macros.protein,
-          carbs: adjustedResult.macros.carbs,
-          fat: adjustedResult.macros.fat,
+          calories: editableValues.calories,
+          protein: editableValues.protein,
+          carbs: editableValues.carbs,
+          fat: editableValues.fat,
           portion_size: `${portionSize}% of standard portion`,
           meal_type: 'scanned'
         })
@@ -649,24 +667,49 @@ const adjustCalories = (newPortion: number) => {
                       {/* Nutrition Facts */}
                       <div className="space-y-4">
                         <div className="text-center p-4 bg-primary/10 rounded-lg">
-                          <div className="text-2xl font-bold text-primary">
-                            {adjustedResult?.calories}
-                          </div>
+                          <Input
+                            type="number"
+                            value={editableValues.calories}
+                            onChange={(e) => setEditableValues(prev => ({ ...prev, calories: Number(e.target.value) }))}
+                            className="text-2xl font-bold text-primary text-center bg-transparent border-none"
+                            min="0"
+                          />
                           <div className="text-sm text-muted-foreground">calories</div>
                         </div>
 
                         <div className="grid grid-cols-3 gap-4 text-center">
                           <div className="p-3 bg-muted/50 rounded-lg">
-                            <div className="font-semibold">{adjustedResult?.macros.protein}g</div>
-                            <div className="text-xs text-muted-foreground">Protein</div>
+                            <Input
+                              type="number"
+                              value={editableValues.protein}
+                              onChange={(e) => setEditableValues(prev => ({ ...prev, protein: Number(e.target.value) }))}
+                              className="font-semibold text-center bg-transparent border-none"
+                              min="0"
+                              step="0.1"
+                            />
+                            <div className="text-xs text-muted-foreground">Protein (g)</div>
                           </div>
                           <div className="p-3 bg-muted/50 rounded-lg">
-                            <div className="font-semibold">{adjustedResult?.macros.carbs}g</div>
-                            <div className="text-xs text-muted-foreground">Carbs</div>
+                            <Input
+                              type="number"
+                              value={editableValues.carbs}
+                              onChange={(e) => setEditableValues(prev => ({ ...prev, carbs: Number(e.target.value) }))}
+                              className="font-semibold text-center bg-transparent border-none"
+                              min="0"
+                              step="0.1"
+                            />
+                            <div className="text-xs text-muted-foreground">Carbs (g)</div>
                           </div>
                           <div className="p-3 bg-muted/50 rounded-lg">
-                            <div className="font-semibold">{adjustedResult?.macros.fat}g</div>
-                            <div className="text-xs text-muted-foreground">Fat</div>
+                            <Input
+                              type="number"
+                              value={editableValues.fat}
+                              onChange={(e) => setEditableValues(prev => ({ ...prev, fat: Number(e.target.value) }))}
+                              className="font-semibold text-center bg-transparent border-none"
+                              min="0"
+                              step="0.1"
+                            />
+                            <div className="text-xs text-muted-foreground">Fat (g)</div>
                           </div>
                         </div>
 
