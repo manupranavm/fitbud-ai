@@ -354,34 +354,51 @@ const Dashboard: React.FC = () => {
                 </div>
               </FitnessCardHeader>
               <FitnessCardContent>
-                 <div className="space-y-3 mb-6">
-                   {todaysWorkout.exercises.slice(0, 6).map((exercise, index) => (
-                     <div 
-                       key={index}
-                       className={`flex items-center justify-between py-2 border-l-2 pl-3 ${
-                         exercise.completed ? 'border-primary' : 'border-muted'
-                       }`}
-                     >
-                       <span className={`text-sm ${exercise.completed ? 'font-medium' : ''}`}>
-                         {exercise.name}
-                       </span>
-                       <span className="text-sm text-muted-foreground">
-                         {exercise.sets} × {exercise.reps}
-                       </span>
-                     </div>
-                   ))}
-                   {todaysWorkout.exercises.length > 6 && (
-                     <div className="text-center text-sm text-muted-foreground">
-                       +{todaysWorkout.exercises.length - 6} more exercises
-                     </div>
-                   )}
-                 </div>
-                
-                 <FitnessButton asChild className="w-full" size="lg">
-                   <Link to="/workout">
-                     {workoutProgress > 0 ? "Continue Workout" : "Start Workout"}
-                   </Link>
-                 </FitnessButton>
+                {todaysWorkout ? (
+                  <>
+                    <div className="space-y-3 mb-6">
+                      {todaysWorkout.exercises.slice(0, 6).map((exercise, index) => (
+                        <div 
+                          key={index}
+                          className={`flex items-center justify-between py-2 border-l-2 pl-3 ${
+                            exercise.completed ? 'border-primary' : 'border-muted'
+                          }`}
+                        >
+                          <span className={`text-sm ${exercise.completed ? 'font-medium' : ''}`}>
+                            {exercise.name}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            {exercise.sets} × {exercise.reps}
+                          </span>
+                        </div>
+                      ))}
+                      {todaysWorkout.exercises.length > 6 && (
+                        <div className="text-center text-sm text-muted-foreground">
+                          +{todaysWorkout.exercises.length - 6} more exercises
+                        </div>
+                      )}
+                    </div>
+                   
+                    <FitnessButton asChild className="w-full" size="lg">
+                      <Link to="/workout/session/today">
+                        <Play className="w-4 h-4" />
+                        {workoutProgress > 0 ? "Continue Workout" : "Start Workout"}
+                      </Link>
+                    </FitnessButton>
+                  </>
+                ) : (
+                  <div className="text-center py-6">
+                    <p className="text-muted-foreground mb-4">
+                      Create a personalized workout plan based on your available gym equipment
+                    </p>
+                    <FitnessButton asChild className="w-full" size="lg">
+                      <Link to="/gym-equipment">
+                        <Plus className="w-4 h-4" />
+                        Create Workout Plan
+                      </Link>
+                    </FitnessButton>
+                  </div>
+                )}
               </FitnessCardContent>
             </FitnessCard>
           </div>
