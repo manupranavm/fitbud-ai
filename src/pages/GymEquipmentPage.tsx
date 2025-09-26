@@ -432,7 +432,7 @@ const GymEquipmentPage: React.FC = () => {
 
   // Load a saved workout plan
   const loadSavedPlan = (plan: any) => {
-    setWorkoutPlan(plan.workout_plan);
+    setWorkoutPlan(plan.workout_plan as unknown as WorkoutPlan);
     setCurrentEquipment(plan.equipment_list);
     setPlanName(plan.plan_name);
     setActiveTab("plan");
@@ -476,10 +476,42 @@ const GymEquipmentPage: React.FC = () => {
   useEffect(() => {
     if (user) {
       loadSavedPlans();
+      loadLatestPlan(); // Auto-load the latest plan
     } else {
       setSavedPlans([]);
+      setWorkoutPlan(null);
+      setCurrentEquipment([]);
     }
   }, [user]);
+
+  // Load the latest workout plan automatically
+  const loadLatestPlan = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('equipment_workouts')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      
+      if (data) {
+        setWorkoutPlan(data.workout_plan as unknown as WorkoutPlan);
+        setCurrentEquipment(data.equipment_list);
+        setPlanName(data.plan_name);
+        // Only switch to plan tab if we're currently on input tab and no plan is active
+        if (activeTab === 'input' && !workoutPlan) {
+          setActiveTab("plan");
+        }
+      }
+    } catch (error) {
+      console.error('Error loading latest plan:', error);
+    }
+  };
 
   const renderExercise = (exercise: Exercise, index: number) => (
     <div 
