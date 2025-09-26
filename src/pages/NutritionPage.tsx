@@ -671,10 +671,11 @@ const adjustCalories = (newPortion: number) => {
                             type="number"
                             value={editableValues.calories}
                             onChange={(e) => setEditableValues(prev => ({ ...prev, calories: Number(e.target.value) }))}
-                            className="text-2xl font-bold text-primary text-center bg-transparent border-none"
+                            className="text-2xl font-bold text-primary text-center border border-border/50 hover:border-border focus:border-primary bg-background/50"
                             min="0"
+                            placeholder="Enter calories"
                           />
-                          <div className="text-sm text-muted-foreground">calories</div>
+                          <div className="text-sm text-muted-foreground mt-1">calories</div>
                         </div>
 
                         <div className="grid grid-cols-3 gap-4 text-center">
@@ -683,33 +684,36 @@ const adjustCalories = (newPortion: number) => {
                               type="number"
                               value={editableValues.protein}
                               onChange={(e) => setEditableValues(prev => ({ ...prev, protein: Number(e.target.value) }))}
-                              className="font-semibold text-center bg-transparent border-none"
+                              className="font-semibold text-center border border-border/50 hover:border-border focus:border-primary bg-background/50"
                               min="0"
                               step="0.1"
+                              placeholder="0"
                             />
-                            <div className="text-xs text-muted-foreground">Protein (g)</div>
+                            <div className="text-xs text-muted-foreground mt-1">Protein (g)</div>
                           </div>
                           <div className="p-3 bg-muted/50 rounded-lg">
                             <Input
                               type="number"
                               value={editableValues.carbs}
                               onChange={(e) => setEditableValues(prev => ({ ...prev, carbs: Number(e.target.value) }))}
-                              className="font-semibold text-center bg-transparent border-none"
+                              className="font-semibold text-center border border-border/50 hover:border-border focus:border-primary bg-background/50"
                               min="0"
                               step="0.1"
+                              placeholder="0"
                             />
-                            <div className="text-xs text-muted-foreground">Carbs (g)</div>
+                            <div className="text-xs text-muted-foreground mt-1">Carbs (g)</div>
                           </div>
                           <div className="p-3 bg-muted/50 rounded-lg">
                             <Input
                               type="number"
                               value={editableValues.fat}
                               onChange={(e) => setEditableValues(prev => ({ ...prev, fat: Number(e.target.value) }))}
-                              className="font-semibold text-center bg-transparent border-none"
+                              className="font-semibold text-center border border-border/50 hover:border-border focus:border-primary bg-background/50"
                               min="0"
                               step="0.1"
+                              placeholder="0"
                             />
-                            <div className="text-xs text-muted-foreground">Fat (g)</div>
+                            <div className="text-xs text-muted-foreground mt-1">Fat (g)</div>
                           </div>
                         </div>
 
