@@ -195,7 +195,7 @@ const Dashboard: React.FC = () => {
                 </ProgressRing>
               </div>
               <p className="text-sm text-center text-muted-foreground">
-                Upper Body Strength
+                {todaysWorkout?.name || "Today's Workout"}
               </p>
             </FitnessCardContent>
           </FitnessCard>
@@ -348,9 +348,6 @@ const Dashboard: React.FC = () => {
                      {todaysWorkout ? `${todaysWorkout.exercises.length} exercises • ${todaysWorkout.duration} minutes • ${todaysWorkout.difficulty}` : "Create a workout plan using your gym equipment"}
                    </FitnessCardDescription>
                  </div>
-                  <FitnessButton size="icon" variant="secondary">
-                    <Play className="w-4 h-4" />
-                  </FitnessButton>
                 </div>
               </FitnessCardHeader>
               <FitnessCardContent>
@@ -380,7 +377,7 @@ const Dashboard: React.FC = () => {
                     </div>
                    
                     <FitnessButton asChild className="w-full" size="lg">
-                      <Link to="/workout/session/today">
+                      <Link to="/gym-equipment?goto=today">
                         <Play className="w-4 h-4" />
                         {workoutProgress > 0 ? "Continue Workout" : "Start Workout"}
                       </Link>
