@@ -822,6 +822,10 @@ const adjustCalories = (newPortion: number) => {
                     playsInline
                     muted
                     className="w-full h-full object-cover"
+                    style={{ 
+                      display: 'block',
+                      minHeight: '300px'
+                    }}
                   />
                 </div>
                 

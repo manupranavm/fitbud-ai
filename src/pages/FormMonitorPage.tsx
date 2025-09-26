@@ -486,6 +486,7 @@ const FormMonitorPage: React.FC = () => {
                       style={{ 
                         transform: 'scaleX(-1)',
                         display: 'block',
+                        minHeight: '500px',
                         backgroundColor: '#000'
                       }}
                     />

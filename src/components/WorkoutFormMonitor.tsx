@@ -414,6 +414,7 @@ const WorkoutFormMonitor: React.FC<WorkoutFormMonitorProps> = ({ onClose }) => {
                     style={{ 
                       transform: 'scaleX(-1)',
                       display: 'block',
+                      minHeight: '400px',
                       backgroundColor: '#000'
                     }}
                     onLoadedMetadata={() => {

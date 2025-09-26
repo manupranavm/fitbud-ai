@@ -461,6 +461,10 @@ const GymEquipmentPage: React.FC = () => {
                         autoPlay 
                         playsInline 
                         className="w-full h-full object-cover rounded-lg"
+                        style={{ 
+                          display: 'block',
+                          minHeight: '200px'
+                        }}
                       />
                     ) : (
                       <div className="text-center space-y-4">
@@ -566,6 +570,10 @@ const GymEquipmentPage: React.FC = () => {
                         playsInline 
                         muted={!isRecording}
                         className="w-full h-full object-cover rounded-lg"
+                        style={{ 
+                          display: 'block',
+                          minHeight: '200px'
+                        }}
                       />
                     ) : (
                       <div className="text-center space-y-4">
