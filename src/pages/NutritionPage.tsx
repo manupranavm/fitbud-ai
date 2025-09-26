@@ -62,16 +62,14 @@ const NutritionPage: React.FC = () => {
     }))
 
     dailyFoods.forEach(food => {
-      const hour = new Date(food.created_at).getHours()
-      hourlyData[hour].calories += Number(food.calories)
+      const foodDate = new Date(food.created_at)
+      const hour = foodDate.getHours()
+      hourlyData[hour].calories += Number(food.calories) || 0
       hourlyData[hour].meals.push(food.food_name)
     })
 
-    // Only return hours with data or the current hour
-    const currentHour = new Date().getHours()
-    return hourlyData.filter((data, index) => 
-      data.calories > 0 || index === currentHour || index <= currentHour
-    )
+    // Return data for the entire day, showing 0 for hours with no meals
+    return hourlyData
   }
 
   const hourlyCalorieData = getHourlyCalorieData()
@@ -464,50 +462,49 @@ const adjustCalories = (newPortion: number) => {
                         },
                       }}
                     >
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={hourlyCalorieData}>
-                          <XAxis 
-                            dataKey="hour" 
-                            tick={{ fontSize: 12 }}
-                            tickLine={false}
-                            axisLine={false}
-                          />
-                          <YAxis 
-                            tick={{ fontSize: 12 }}
-                            tickLine={false}
-                            axisLine={false}
-                          />
-                          <ChartTooltip
-                            content={({ active, payload, label }) => {
-                              if (active && payload && payload.length) {
-                                const data = payload[0].payload
-                                return (
-                                  <div className="bg-background border border-border rounded-lg p-3 shadow-lg">
-                                    <p className="font-medium">{label}</p>
-                                    <p className="text-primary font-semibold">
-                                      {payload[0].value} calories
-                                    </p>
-                                    {data.meals.length > 0 && (
-                                      <div className="mt-2 space-y-1">
-                                        <p className="text-xs text-muted-foreground">Meals:</p>
-                                        {data.meals.map((meal, index) => (
-                                          <p key={index} className="text-xs">{meal}</p>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                )
-                              }
-                              return null
-                            }}
-                          />
-                          <Bar 
-                            dataKey="calories" 
-                            fill="hsl(var(--primary))"
-                            radius={[4, 4, 0, 0]}
-                          />
-                        </BarChart>
-                      </ResponsiveContainer>
+                      <BarChart data={hourlyCalorieData} width={800} height={250}>
+                        <XAxis 
+                          dataKey="hour" 
+                          tick={{ fontSize: 10 }}
+                          tickLine={false}
+                          axisLine={false}
+                          interval="preserveStartEnd"
+                        />
+                        <YAxis 
+                          tick={{ fontSize: 10 }}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <ChartTooltip
+                          content={({ active, payload, label }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload
+                              return (
+                                <div className="bg-background border border-border rounded-lg p-3 shadow-lg">
+                                  <p className="font-medium">{label}</p>
+                                  <p className="text-primary font-semibold">
+                                    {payload[0].value} calories
+                                  </p>
+                                  {data.meals.length > 0 && (
+                                    <div className="mt-2 space-y-1">
+                                      <p className="text-xs text-muted-foreground">Meals:</p>
+                                      {data.meals.map((meal, index) => (
+                                        <p key={index} className="text-xs">{meal}</p>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            }
+                            return null
+                          }}
+                        />
+                        <Bar 
+                          dataKey="calories" 
+                          fill="hsl(var(--primary))"
+                          radius={[4, 4, 0, 0]}
+                        />
+                      </BarChart>
                     </ChartContainer>
                   </div>
                 ) : (
@@ -774,49 +771,51 @@ const adjustCalories = (newPortion: number) => {
                             },
                           }}
                         >
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={historicalData.reverse()}>
-                              <XAxis 
-                                dataKey="date"
-                                tick={{ fontSize: 10 }}
-                                tickLine={false}
-                                axisLine={false}
-                                tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                              />
-                              <YAxis 
-                                tick={{ fontSize: 12 }}
-                                tickLine={false}
-                                axisLine={false}
-                              />
-                              <ChartTooltip
-                                content={({ active, payload, label }) => {
-                                  if (active && payload && payload.length) {
-                                    const data = payload[0].payload
-                                    return (
-                                      <div className="bg-background border border-border rounded-lg p-3 shadow-lg">
-                                        <p className="font-medium">{new Date(label).toLocaleDateString()}</p>
-                                        <p className="text-primary font-semibold">
-                                          {payload[0].value} calories
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                          {data.meals} meals logged
-                                        </p>
-                                      </div>
-                                    )
-                                  }
-                                  return null
-                                }}
-                              />
-                              <Line 
-                                type="monotone"
-                                dataKey="calories" 
-                                stroke="hsl(var(--primary))"
-                                strokeWidth={2}
-                                dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 4 }}
-                                activeDot={{ r: 6, stroke: "hsl(var(--primary))", strokeWidth: 2 }}
-                              />
-                            </LineChart>
-                          </ResponsiveContainer>
+                          <LineChart data={[...historicalData].reverse()} width={600} height={250}>
+                            <XAxis 
+                              dataKey="date"
+                              tick={{ fontSize: 9 }}
+                              tickLine={false}
+                              axisLine={false}
+                              tickFormatter={(date) => {
+                                const d = new Date(date)
+                                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                              }}
+                              interval="preserveStartEnd"
+                            />
+                            <YAxis 
+                              tick={{ fontSize: 10 }}
+                              tickLine={false}
+                              axisLine={false}
+                            />
+                            <ChartTooltip
+                              content={({ active, payload, label }) => {
+                                if (active && payload && payload.length) {
+                                  const data = payload[0].payload
+                                  return (
+                                    <div className="bg-background border border-border rounded-lg p-3 shadow-lg">
+                                      <p className="font-medium">{new Date(label).toLocaleDateString()}</p>
+                                      <p className="text-primary font-semibold">
+                                        {payload[0].value} calories
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {data.meals} meals logged
+                                      </p>
+                                    </div>
+                                  )
+                                }
+                                return null
+                              }}
+                            />
+                            <Line 
+                              type="monotone"
+                              dataKey="calories" 
+                              stroke="hsl(var(--primary))"
+                              strokeWidth={2}
+                              dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 3 }}
+                              activeDot={{ r: 5, stroke: "hsl(var(--primary))", strokeWidth: 2 }}
+                            />
+                          </LineChart>
                         </ChartContainer>
                       </div>
                     ) : (
