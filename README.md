@@ -1,73 +1,113 @@
-# Welcome to your Lovable project
+# DynamoPulseFit - AI-Powered Fitness Platform
 
-## Project info
+DynamoPulseFit is a comprehensive fitness platform that leverages AI to provide personalized workout plans, form analysis, nutrition tracking, and progress monitoring.
 
-**URL**: https://lovable.dev/projects/dac04ca0-12fc-4e77-8061-7e38e444ff72
+## Features
 
-## How can I edit this code?
+- **AI Workout Generation**: Get personalized workout plans based on your goals, equipment, and fitness level
+- **Form Monitoring**: Real-time form analysis and feedback using AI-powered pose detection
+- **Equipment-Based Workouts**: Find workouts tailored to the equipment you have available
+- **Nutrition Tracking**: Log and analyze your food intake with AI-powered food image analysis
+- **Progress Tracking**: Monitor your fitness journey with detailed progress metrics and visualizations
+- **Personalized Dashboard**: Get insights and recommendations based on your activity
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+- **Frontend**:
+  - React 18
+  - TypeScript
+  - Vite
+  - Tailwind CSS
+  - Shadcn UI Components
+  - React Router Dom
+  - React Query
+  - Zustand (State Management)
+  - Chart.js / Recharts
+  
+- **Backend**:
+  - Supabase (Authentication, Database, Storage)
+  - Supabase Edge Functions
+  - OpenAI API Integration
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/dac04ca0-12fc-4e77-8061-7e38e444ff72) and start prompting.
+- **AI/ML**:
+  - TensorFlow.js
+  - MediaPipe
+  - Hugging Face Transformers
 
-Changes made via Lovable will be committed automatically to this repo.
+## Project Structure
 
-**Use your preferred IDE**
+The project follows a feature-based architecture:
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+```
+src/
+├── assets/              # Static assets (images, icons)
+├── components/          # Shared UI components
+├── core/                # Core functionality
+│   ├── config/          # App configuration
+│   ├── providers/       # Context providers
+│   ├── services/        # Service integrations
+│   ├── types/           # TypeScript types
+│   └── utils/           # Utility functions
+├── features/            # Feature modules
+│   ├── auth/            # Authentication feature
+│   ├── dashboard/       # Dashboard feature
+│   ├── form-monitor/    # Form monitoring feature
+│   ├── landing/         # Landing page
+│   ├── nutrition/       # Nutrition tracking feature
+│   ├── profile/         # User profile feature
+│   ├── progress/        # Progress tracking feature
+│   └── workout/         # Workout feature
+└── lib/                 # Third-party libraries and utils
+```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Getting Started
 
-Follow these steps:
+### Prerequisites
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- Node.js 18+ and npm
+- Supabase account for backend services
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Installation
 
-# Step 3: Install the necessary dependencies.
-npm i
+```bash
+# Clone the repository
+git clone https://github.com/manupranavm/dynamo-pulse-fit.git
+cd dynamo-pulse-fit
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Install dependencies
+npm install
+
+# Start the development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Environment Variables
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Create a `.env.local` file in the root directory with the following variables:
 
-**Use GitHub Codespaces**
+```
+VITE_SUPABASE_URL=your-supabase-url
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Contributing
 
-## What technologies are used for this project?
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-This project is built with:
+## License
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## How can I deploy this project?
+## Acknowledgments
 
-Simply open [Lovable](https://lovable.dev/projects/dac04ca0-12fc-4e77-8061-7e38e444ff72) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- [React](https://reactjs.org/)
+- [Vite](https://vitejs.dev/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Shadcn UI](https://ui.shadcn.com/)
+- [Supabase](https://supabase.com/)
+- [TensorFlow.js](https://www.tensorflow.org/js)
+- [MediaPipe](https://google.github.io/mediapipe/)

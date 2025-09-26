@@ -1,0 +1,19 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "csstools.postcss",
+    "streetsidesoftware.code-spell-checker",
+    "formulahendry.auto-rename-tag",
+    "formulahendry.auto-close-tag",
+    "naumovs.color-highlight",
+    "ms-vscode.vscode-typescript-next",
+    "rvest.vs-code-prettier-eslint",
+    "mikestead.dotenv",
+    "eamodio.gitlens",
+    "yoavbls.pretty-ts-errors",
+    "github.copilot",
+    "github.copilot-chat"
+  ]
+}
