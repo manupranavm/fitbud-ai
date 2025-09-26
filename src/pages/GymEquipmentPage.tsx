@@ -93,16 +93,54 @@ const GymEquipmentPage: React.FC = () => {
 
   const startCamera = async () => {
     try {
+      console.log('Requesting camera access...');
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: 'environment' }, 
         audio: false 
       });
+      console.log('Camera stream obtained:', mediaStream);
       setStream(mediaStream);
       setIsCameraOpen(true);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
+      
+      // Wait for the video element to be ready
+      setTimeout(() => {
+        if (videoRef.current && mediaStream) {
+          console.log('Setting video srcObject');
+          videoRef.current.srcObject = mediaStream;
+          
+          const setupVideo = async () => {
+            if (!videoRef.current) return;
+            
+            try {
+              // Wait for video metadata to load
+              await new Promise<void>((resolve) => {
+                if (videoRef.current) {
+                  videoRef.current.onloadedmetadata = () => {
+                    console.log('Video metadata loaded');
+                    resolve();
+                  };
+                }
+              });
+              
+              // Now try to play the video
+              await videoRef.current.play();
+              console.log('Video is now playing');
+            } catch (playError) {
+              console.error('Error playing video:', playError);
+              toast({
+                title: "Camera Error",
+                description: "Failed to start camera preview",
+                variant: "destructive",
+              });
+            }
+          };
+          
+          setupVideo();
+        }
+      }, 100);
+      
     } catch (error) {
+      console.error('Error accessing camera:', error);
       toast({
         title: "Camera Error",
         description: "Unable to access camera. Please check permissions.",
@@ -144,10 +182,12 @@ const GymEquipmentPage: React.FC = () => {
 
   const startVideoRecording = async () => {
     try {
+      console.log('Starting video recording...');
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: 'environment' }, 
         audio: true 
       });
+      console.log('Video recording stream obtained:', mediaStream);
       setStream(mediaStream);
       
       const recorder = new MediaRecorder(mediaStream);
@@ -171,10 +211,38 @@ const GymEquipmentPage: React.FC = () => {
       recorder.start();
       setIsRecording(true);
       
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
+      // Wait for video element to be ready
+      setTimeout(() => {
+        if (videoRef.current && mediaStream) {
+          console.log('Setting video recording srcObject');
+          videoRef.current.srcObject = mediaStream;
+          
+          const setupVideo = async () => {
+            if (!videoRef.current) return;
+            
+            try {
+              await new Promise<void>((resolve) => {
+                if (videoRef.current) {
+                  videoRef.current.onloadedmetadata = () => {
+                    console.log('Video recording metadata loaded');
+                    resolve();
+                  };
+                }
+              });
+              
+              await videoRef.current.play();
+              console.log('Video recording is now playing');
+            } catch (playError) {
+              console.error('Error playing recording video:', playError);
+            }
+          };
+          
+          setupVideo();
+        }
+      }, 100);
+      
     } catch (error) {
+      console.error('Error starting video recording:', error);
       toast({
         title: "Recording Error",
         description: "Unable to start video recording. Please check permissions.",
