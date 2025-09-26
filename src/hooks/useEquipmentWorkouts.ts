@@ -41,29 +41,56 @@ export const useEquipmentWorkouts = () => {
 
   const getTodaysWorkout = () => {
     const latest = getLatestWorkout()
-    if (!latest?.workout_plan?.plan?.days) return null
+    const planRoot = latest?.workout_plan
+    if (!planRoot) return null
 
     const today = new Date()
     const dayOfWeek = today.getDay() // 0 = Sunday, 1 = Monday, etc.
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
     const todayName = dayNames[dayOfWeek]
 
-    // Find today's workout in the plan
-    const todaysWorkout = latest.workout_plan.plan.days.find((day: any) => 
-      day.day.toLowerCase() === todayName.toLowerCase()
-    )
+    // Support shape A: { plan: { days: [{ day: 'Monday', exercises: [...] }], difficulty } }
+    const planDays = planRoot?.plan?.days
+    if (Array.isArray(planDays)) {
+      const todaysWorkout = planDays.find((day: any) =>
+        (day.day || day.name || '').toLowerCase() === todayName.toLowerCase()
+      )
+      if (todaysWorkout && todaysWorkout.exercises?.length > 0) {
+        return {
+          name: todaysWorkout.focus || todaysWorkout.name || `${todayName} Workout`,
+          exercises: todaysWorkout.exercises.map((ex: any) => ({
+            name: ex.name,
+            sets: ex.sets,
+            reps: ex.reps,
+            completed: false
+          })),
+          duration: 45,
+          difficulty: planRoot?.plan?.difficulty || 'Intermediate'
+        }
+      }
+    }
 
-    if (todaysWorkout && todaysWorkout.exercises?.length > 0) {
-      return {
-        name: todaysWorkout.focus || `${todayName} Workout`,
-        exercises: todaysWorkout.exercises.map((ex: any) => ({
-          name: ex.name,
-          sets: ex.sets,
-          reps: ex.reps,
-          completed: false
-        })),
-        duration: 45, // Default duration
-        difficulty: latest.workout_plan.plan.difficulty || 'Intermediate'
+    // Support shape B: { weekPlan: { Monday: { focus, exercises: [...] }, ... }, difficulty }
+    const weekPlan = planRoot?.weekPlan
+    if (weekPlan && typeof weekPlan === 'object') {
+      // Try exact key, then case-insensitive match
+      let dayPlan = weekPlan[todayName] || weekPlan[todayName.toLowerCase()] || weekPlan[todayName.toUpperCase()]
+      if (!dayPlan) {
+        const key = Object.keys(weekPlan).find(k => k.toLowerCase() === todayName.toLowerCase())
+        if (key) dayPlan = weekPlan[key]
+      }
+      if (dayPlan && Array.isArray(dayPlan.exercises) && dayPlan.exercises.length > 0) {
+        return {
+          name: dayPlan.focus || dayPlan.name || `${todayName} Workout`,
+          exercises: dayPlan.exercises.map((ex: any) => ({
+            name: ex.name,
+            sets: ex.sets,
+            reps: ex.reps,
+            completed: false
+          })),
+          duration: 45,
+          difficulty: planRoot?.difficulty || planRoot?.plan?.difficulty || 'Intermediate'
+        }
       }
     }
 
