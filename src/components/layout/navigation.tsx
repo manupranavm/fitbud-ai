@@ -19,7 +19,7 @@ const navigationItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
   { href: "/workout", icon: Dumbbell, label: "Workout" },
   { href: "/gym-equipment", icon: Settings, label: "Gym Equipment" },
-  { href: "/form-check", icon: Camera, label: "Form Check" },
+  { href: "/form-monitor", icon: Camera, label: "Form Monitor" },
   { href: "/nutrition", icon: UtensilsCrossed, label: "Nutrition" },
   { href: "/progress", icon: TrendingUp, label: "Progress" },
   { href: "/settings", icon: User, label: "Settings" },

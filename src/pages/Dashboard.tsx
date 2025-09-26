@@ -13,7 +13,7 @@ import {
   Plus,
   Eye
 } from "lucide-react"
-import WorkoutFormMonitor from "@/components/WorkoutFormMonitor"
+
 import { useAuth } from "@/hooks/useAuth"
 import { useWorkout } from "@/hooks/useWorkout"
 import { useNutrition } from "@/hooks/useNutrition"
@@ -29,7 +29,7 @@ const Dashboard: React.FC = () => {
   const { totalWorkouts, currentStreak, workoutHistory, currentWorkout } = useWorkout()
   const { getTodaysTotals, goals, loadTodaysFoods } = useNutrition()
   const { getTodaysWorkout } = useEquipmentWorkouts()
-  const [showFormMonitor, setShowFormMonitor] = useState(false)
+  const [showFormMonitor, setShowFormMonitor] = useState(false)  // Keep for backward compatibility but don't use
   
   // Load today's nutrition data on component mount
   useEffect(() => {
@@ -404,10 +404,6 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Workout Form Monitor Modal */}
-        {showFormMonitor && (
-          <WorkoutFormMonitor onClose={() => setShowFormMonitor(false)} />
-        )}
     </main>
   )
 }

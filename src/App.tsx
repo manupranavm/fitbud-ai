@@ -15,6 +15,7 @@ import WorkoutPlanDetailsPage from "./pages/WorkoutPlanDetailsPage";
 import ExerciseDetailsPage from "./pages/ExerciseDetailsPage";
 import GymEquipmentPage from "./pages/GymEquipmentPage";
 import FormCheckPage from "./pages/FormCheckPage";
+import FormMonitorPage from "./pages/FormMonitorPage";
 import NutritionPage from "./pages/NutritionPage";
 import ProgressPage from "./pages/ProgressPage";
 import SettingsPage from "./pages/SettingsPage";
@@ -44,7 +45,8 @@ const AppContent = () => {
         <Route path="/workout/plan/:planId/details" element={<ProtectedRoute><AppLayout><WorkoutPlanDetailsPage /></AppLayout></ProtectedRoute>} />
         <Route path="/exercise/:exerciseName" element={<ProtectedRoute><ExerciseDetailsPage /></ProtectedRoute>} />
         <Route path="/gym-equipment" element={<ProtectedRoute><AppLayout><GymEquipmentPage /></AppLayout></ProtectedRoute>} />
-        <Route path="/form-check" element={<ProtectedRoute><AppLayout><FormCheckPage /></AppLayout></ProtectedRoute>} />
+        <Route path="/form-check" element={<ProtectedRoute><FormMonitorPage /></ProtectedRoute>} />
+        <Route path="/form-monitor" element={<ProtectedRoute><FormMonitorPage /></ProtectedRoute>} />
         <Route path="/nutrition" element={<ProtectedRoute><AppLayout><NutritionPage /></AppLayout></ProtectedRoute>} />
           <Route path="/progress" element={<ProtectedRoute><AppLayout><ProgressPage /></AppLayout></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><AppLayout><SettingsPage /></AppLayout></ProtectedRoute>} />
