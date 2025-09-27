@@ -500,10 +500,6 @@ const NutritionPage: React.FC = () => {
               <FitnessCardHeader>
                 <div className="flex items-center justify-between">
                   <FitnessCardTitle>Today's Meals</FitnessCardTitle>
-                  <FitnessButton variant="ghost" size="sm">
-                    <Plus className="w-4 h-4" />
-                    Add Meal
-                  </FitnessButton>
                 </div>
               </FitnessCardHeader>
 
