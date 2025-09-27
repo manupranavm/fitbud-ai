@@ -52,21 +52,10 @@ This is an AI gym buddy web application that calculates the calories of the food
 
 ## Demo Pictures
 
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/eef54524-1ed6-40f9-857e-c4c675584365" alt="image" width="600" />
-</p>
-
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/1737d2c1-3e34-4dce-a07a-4b4cd1e1fccd" alt="image" width="600" />
-</p>
-
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/5a50b63b-ffa3-4256-84e6-22f59ef42fba" alt="image" width="600" />
-</p>
-
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/9d90ccab-e4a3-42b6-bd94-f8b0d5b2ff5d" alt="image" width="600" />
-</p>
+| | |
+|---|---|
+| <img src="https://github.com/user-attachments/assets/eef54524-1ed6-40f9-857e-c4c675584365" alt="image1" width="400"/> | <img src="https://github.com/user-attachments/assets/1737d2c1-3e34-4dce-a07a-4b4cd1e1fccd" alt="image2" width="400"/> |
+| <img src="https://github.com/user-attachments/assets/5a50b63b-ffa3-4256-84e6-22f59ef42fba" alt="image3" width="400"/> | <img src="https://github.com/user-attachments/assets/9d90ccab-e4a3-42b6-bd94-f8b0d5b2ff5d" alt="image4" width="400"/> |
 
 
 
