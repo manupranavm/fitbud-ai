@@ -1,6 +1,5 @@
 import {
   Beef,
-  Camera,
   Flame,
   Play,
   Plus,
@@ -135,13 +134,6 @@ const Dashboard: React.FC = () => {
   const todaysWorkout = getTodaysWorkout();
 
   const quickActions = [
-    {
-      title: "Form Check",
-      description: "Record and analyze your form",
-      icon: Camera,
-      href: "/form-check",
-      variant: "interactive" as const,
-    },
     {
       title: "Log Meal",
       description: "Scan or add your meals",
