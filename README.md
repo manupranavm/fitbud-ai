@@ -50,8 +50,8 @@ This is an AI gym buddy web application that calculates the calories of the food
 
 # Overview
 
-[![fitbud-ai Preview][product-preview]](https://github.com/manupranavm/fitbud-ai/blob/main/media/preview.png)
-[![fitbud-ai Demo][product-video]](https://github.com/manupranavm/fitbud-ai/blob/main/media/demo.gif)
+[![fitbud-ai Preview][product-preview]](https://github.com/manupranavm/fitbud-ai/blob/main/media/track_nutrition.mp4)
+[![fitbud-ai Demo][product-video]](https://github.com/manupranavm/fitbud-ai/blob/main/media/gym_plan.mp4)
 
 Here's a blank template to get started: To avoid retyping too much info. Do a search and replace with your text editor for the following: `manupranavm`, `fitbud-ai`, `twitter_handle`, `linkedin_username`, `email_client`, `email`, `project_title`, `project_description`
 
@@ -143,5 +143,5 @@ $ npm run dev
 [python-url]: https://www.python.org/
 [tailwindcss.com]: https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white
 [tailwindcss-url]: https://tailwind.com
-[product-preview]: media/preview.png
-[product-video]: media/demo.gif
+[product-preview]: media/track_nutrition.mp4
+[product-video]: media/gym_plan.mp4
