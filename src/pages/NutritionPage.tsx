@@ -1,84 +1,89 @@
-import React, { useState, useRef } from "react"
-import toast from "react-hot-toast"
-import { 
-  Camera, 
-  Upload, 
-  Plus, 
-  Search,
-  Clock,
-  Target,
-  Utensils,
-  TrendingUp
-} from "lucide-react"
+import { Camera, Plus, TrendingUp, Upload, Utensils } from "lucide-react";
+import React, { useRef, useState } from "react";
+import toast from "react-hot-toast";
 
-import { FitnessButton } from "@/components/ui/fitness-button"
-import { FitnessCard, FitnessCardContent, FitnessCardDescription, FitnessCardHeader, FitnessCardTitle } from "@/components/ui/fitness-card"
-import { Input } from "@/components/ui/input"
-import { Slider } from "@/components/ui/slider"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ProgressRing } from "@/components/ui/progress-ring"
-import { useNutrition } from "@/hooks/useNutrition"
-import { useAuth } from "@/hooks/useAuth"
-import { useEffect } from "react"
-import healthyFoodImage from "@/assets/healthy-food.jpg"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, BarChart, Bar } from "recharts"
+import healthyFoodImage from "@/assets/healthy-food.jpg";
+import { Badge } from "@/components/ui/badge";
+import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
+import { FitnessButton } from "@/components/ui/fitness-button";
+import {
+  FitnessCard,
+  FitnessCardContent,
+  FitnessCardDescription,
+  FitnessCardHeader,
+  FitnessCardTitle,
+} from "@/components/ui/fitness-card";
+import { Input } from "@/components/ui/input";
+import { ProgressRing } from "@/components/ui/progress-ring";
+import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/useAuth";
+import { useNutrition } from "@/hooks/useNutrition";
+import { useEffect } from "react";
+import { Line, LineChart, XAxis, YAxis } from "recharts";
 
 const NutritionPage: React.FC = () => {
-  const { addFood, getTodaysTotals, goals, dailyFoods, loadTodaysFoods, isLoading, getDailyTotalsForDateRange } = useNutrition()
-  const { user } = useAuth()
-  const [scanResult, setScanResult] = useState<any>(null)
-  const [portionSize, setPortionSize] = useState(100)
-  const [historicalData, setHistoricalData] = useState<any[]>([])
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false)
-  const [isCameraOpen, setIsCameraOpen] = useState(false)
-  const [stream, setStream] = useState<MediaStream | null>(null)
+  const {
+    addFood,
+    getTodaysTotals,
+    goals,
+    dailyFoods,
+    loadTodaysFoods,
+    isLoading,
+    getDailyTotalsForDateRange,
+  } = useNutrition();
+  const { user } = useAuth();
+  const [scanResult, setScanResult] = useState<any>(null);
+  const [portionSize, setPortionSize] = useState(100);
+  const [historicalData, setHistoricalData] = useState<any[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
   const [editableValues, setEditableValues] = useState({
     calories: 0,
     protein: 0,
     carbs: 0,
-    fat: 0
-  })
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+    fat: 0,
+  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Get today's totals from the store
-  const todaysTotals = getTodaysTotals()
+  const todaysTotals = getTodaysTotals();
 
   useEffect(() => {
     if (user) {
-      loadTodaysFoods()
+      loadTodaysFoods();
     }
-  }, [user, loadTodaysFoods])
+  }, [user, loadTodaysFoods]);
 
   // Prepare hourly calorie data for the chart
   const getHourlyCalorieData = () => {
     const hourlyData = Array.from({ length: 24 }, (_, hour) => ({
-      hour: `${hour.toString().padStart(2, '0')}:00`,
+      hour: `${hour.toString().padStart(2, "0")}:00`,
       calories: 0,
-      meals: []
-    }))
+      meals: [],
+    }));
 
-    dailyFoods.forEach(food => {
-      const foodDate = new Date(food.created_at)
-      const hour = foodDate.getHours()
-      hourlyData[hour].calories += Number(food.calories) || 0
-      hourlyData[hour].meals.push(food.food_name)
-    })
+    dailyFoods.forEach((food) => {
+      const foodDate = new Date(food.created_at);
+      const hour = foodDate.getHours();
+      hourlyData[hour].calories += Number(food.calories) || 0;
+      hourlyData[hour].meals.push(food.food_name);
+    });
 
     // Return data for the entire day, showing 0 for hours with no meals
-    return hourlyData
-  }
+    return hourlyData;
+  };
 
-  const hourlyCalorieData = getHourlyCalorieData()
+  const hourlyCalorieData = getHourlyCalorieData();
   const dailyGoals = {
     calories: { current: todaysTotals.calories, target: goals.calories },
     protein: { current: todaysTotals.protein, target: goals.protein },
     carbs: { current: todaysTotals.carbs, target: goals.carbs },
-    fat: { current: todaysTotals.fat, target: goals.fat }
-  }
+    fat: { current: todaysTotals.fat, target: goals.fat },
+  };
 
   // Remove dummy data - using real data from database via dailyFoods
 
@@ -88,175 +93,184 @@ const NutritionPage: React.FC = () => {
     macros: {
       protein: 35,
       carbs: 42,
-      fat: 18
+      fat: 18,
     },
     confidence: 89,
-    portion: "1 serving (200g)"
-  }
+    portion: "1 serving (200g)",
+  };
 
   // Load historical data for the past month
   useEffect(() => {
     if (user) {
-      loadHistoryData()
+      loadHistoryData();
     }
-  }, [user])
+  }, [user]);
 
   const loadHistoryData = async () => {
-    setIsLoadingHistory(true)
+    setIsLoadingHistory(true);
     try {
-      const endDate = new Date().toISOString().split('T')[0]
-      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-      const data = await getDailyTotalsForDateRange(startDate, endDate)
-      setHistoricalData(data)
+      const endDate = new Date().toISOString().split("T")[0];
+      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0];
+      const data = await getDailyTotalsForDateRange(startDate, endDate);
+      setHistoricalData(data);
     } catch (error) {
-      console.error('Error loading history:', error)
+      console.error("Error loading history:", error);
     } finally {
-      setIsLoadingHistory(false)
+      setIsLoadingHistory(false);
     }
-  }
+  };
 
   const startCamera = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'environment',
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "environment",
           width: { ideal: 1280 },
-          height: { ideal: 720 }
-        } 
-      })
-      setStream(mediaStream)
-      setIsCameraOpen(true)
-      
+          height: { ideal: 720 },
+        },
+      });
+      setStream(mediaStream);
+      setIsCameraOpen(true);
+
       // Wait for the modal to render and video element to be available
       setTimeout(() => {
         if (videoRef.current && mediaStream) {
-          console.log('NutritionPage: Setting video srcObject');
+          console.log("NutritionPage: Setting video srcObject");
           videoRef.current.srcObject = mediaStream;
-          
+
           const setupVideo = async () => {
             if (!videoRef.current) return;
-            
+
             try {
               // Wait for video to load
               await new Promise((resolve) => {
                 if (videoRef.current) {
                   videoRef.current.onloadedmetadata = () => {
-                    console.log('NutritionPage: Video metadata loaded');
+                    console.log("NutritionPage: Video metadata loaded");
                     resolve(true);
                   };
                 }
               });
-              
+
               // Now try to play
               await videoRef.current.play();
-              console.log('NutritionPage: Video playing successfully');
+              console.log("NutritionPage: Video playing successfully");
             } catch (err) {
-              console.error('NutritionPage: Error playing video:', err);
+              console.error("NutritionPage: Error playing video:", err);
               toast.error("Camera preview failed to load");
             }
           };
-          
+
           setupVideo();
         }
       }, 100); // Small delay to ensure DOM is ready
-      
     } catch (error) {
-      console.error('Error accessing camera:', error)
-      toast.error("Unable to access camera. Please check permissions.")
+      console.error("Error accessing camera:", error);
+      toast.error("Unable to access camera. Please check permissions.");
     }
-  }
+  };
 
   const stopCamera = () => {
     if (stream) {
-      stream.getTracks().forEach(track => track.stop())
-      setStream(null)
+      stream.getTracks().forEach((track) => track.stop());
+      setStream(null);
     }
-    setIsCameraOpen(false)
-  }
+    setIsCameraOpen(false);
+  };
 
   const capturePhoto = () => {
     if (videoRef.current && canvasRef.current) {
-      const canvas = canvasRef.current
-      const video = videoRef.current
-      const context = canvas.getContext('2d')
+      const canvas = canvasRef.current;
+      const video = videoRef.current;
+      const context = canvas.getContext("2d");
 
-      canvas.width = video.videoWidth
-      canvas.height = video.videoHeight
-      
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
       if (context) {
-        context.drawImage(video, 0, 0)
-        canvas.toBlob(async (blob) => {
-          if (blob) {
-            const reader = new FileReader()
-            reader.onload = async (e) => {
-              const base64Data = e.target?.result as string
-              await processImageData(base64Data)
+        context.drawImage(video, 0, 0);
+        canvas.toBlob(
+          async (blob) => {
+            if (blob) {
+              const reader = new FileReader();
+              reader.onload = async (e) => {
+                const base64Data = e.target?.result as string;
+                await processImageData(base64Data);
+              };
+              reader.readAsDataURL(blob);
             }
-            reader.readAsDataURL(blob)
-          }
-        }, 'image/jpeg', 0.8)
+          },
+          "image/jpeg",
+          0.8
+        );
       }
-      stopCamera()
+      stopCamera();
     }
-  }
+  };
 
   const processImageData = async (base64Data: string) => {
     try {
-      toast.success("Food image captured! Analyzing...")
-      
-      const { supabase } = await import("@/integrations/supabase/client")
-      const { data, error } = await supabase.functions.invoke('analyze-food-image', {
-        body: { imageBase64: base64Data }
-      })
-      
-      if (error) {
-        console.error('Error analyzing food:', error)
-        toast.error("Failed to analyze food image. Please try again.")
-        return
-      }
-      
-      setScanResult(data)
-      toast.success("Food identified! Adjust portion size if needed.")
-    } catch (err) {
-      console.error('Error calling food analysis:', err)
-      toast.error("Failed to analyze food image. Please try again.")
-    }
-  }
+      toast.success("Food image captured! Analyzing...");
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data, error } = await supabase.functions.invoke(
+        "analyze-food-image",
+        {
+          body: { imageBase64: base64Data },
+        }
+      );
+
+      if (error) {
+        console.error("Error analyzing food:", error);
+        toast.error("Failed to analyze food image. Please try again.");
+        return;
+      }
+
+      setScanResult(data);
+      toast.success("Food identified! Adjust portion size if needed.");
+    } catch (err) {
+      console.error("Error calling food analysis:", err);
+      toast.error("Failed to analyze food image. Please try again.");
+    }
+  };
+
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
     if (file) {
       try {
-        const reader = new FileReader()
+        const reader = new FileReader();
         reader.onload = async (e) => {
-          const base64Data = e.target?.result as string
-          await processImageData(base64Data)
-        }
-        reader.readAsDataURL(file)
+          const base64Data = e.target?.result as string;
+          await processImageData(base64Data);
+        };
+        reader.readAsDataURL(file);
       } catch (err) {
-        console.error('Error processing file:', err)
-        toast.error("Failed to process image. Please try again.")
+        console.error("Error processing file:", err);
+        toast.error("Failed to process image. Please try again.");
       }
     }
-  }
+  };
 
-const adjustCalories = (newPortion: number) => {
-  if (!scanResult) return null;
+  const adjustCalories = (newPortion: number) => {
+    if (!scanResult) return null;
 
-  const multiplier = newPortion / 100;
-  return {
-    ...scanResult,
-    calories: Math.round(scanResult.calories * multiplier),
-    macros: {
-      protein: Math.round(scanResult.macros.protein * multiplier),
-      carbs: Math.round(scanResult.macros.carbs * multiplier),
-      fat: Math.round(scanResult.macros.fat * multiplier),
-    }
-  }
-}
+    const multiplier = newPortion / 100;
+    return {
+      ...scanResult,
+      calories: Math.round(scanResult.calories * multiplier),
+      macros: {
+        protein: Math.round(scanResult.macros.protein * multiplier),
+        carbs: Math.round(scanResult.macros.carbs * multiplier),
+        fat: Math.round(scanResult.macros.fat * multiplier),
+      },
+    };
+  };
 
-
-  const adjustedResult = adjustCalories(portionSize)
+  const adjustedResult = adjustCalories(portionSize);
 
   // Update editable values when scan result changes
   useEffect(() => {
@@ -265,55 +279,55 @@ const adjustCalories = (newPortion: number) => {
         calories: adjustedResult.calories,
         protein: adjustedResult.macros.protein,
         carbs: adjustedResult.macros.carbs,
-        fat: adjustedResult.macros.fat
+        fat: adjustedResult.macros.fat,
       });
     }
   }, [scanResult]); // Only depend on scanResult, not adjustedResult to avoid infinite loops
 
   const handleAddToDiary = async () => {
     // Allow adding either from scan result or manual input
-    const foodData = scanResult ? {
-      food_name: scanResult.foodName,
-      calories: editableValues.calories,
-      protein: editableValues.protein,
-      carbs: editableValues.carbs,
-      fat: editableValues.fat,
-      portion_size: `${portionSize}% of standard portion`,
-      meal_type: 'scanned'
-    } : {
-      food_name: "Manual Entry",
-      calories: editableValues.calories,
-      protein: editableValues.protein,
-      carbs: editableValues.carbs,
-      fat: editableValues.fat,
-      portion_size: "Manual input",
-      meal_type: 'manual'
-    };
+    const foodData = scanResult
+      ? {
+          food_name: scanResult.foodName,
+          calories: editableValues.calories,
+          protein: editableValues.protein,
+          carbs: editableValues.carbs,
+          fat: editableValues.fat,
+          portion_size: `${portionSize}% of standard portion`,
+          meal_type: "scanned",
+        }
+      : {
+          food_name: "Manual Entry",
+          calories: editableValues.calories,
+          protein: editableValues.protein,
+          carbs: editableValues.carbs,
+          fat: editableValues.fat,
+          portion_size: "Manual input",
+          meal_type: "manual",
+        };
 
     try {
-      await addFood(foodData)
-      toast.success("Food added to diary!")
-      setScanResult(null)
-      setPortionSize(100)
-      setEditableValues({ calories: 0, protein: 0, carbs: 0, fat: 0 })
+      await addFood(foodData);
+      toast.success("Food added to diary!");
+      setScanResult(null);
+      setPortionSize(100);
+      setEditableValues({ calories: 0, protein: 0, carbs: 0, fat: 0 });
       // Reset file input
       if (fileInputRef.current) {
-        fileInputRef.current.value = ''
+        fileInputRef.current.value = "";
       }
     } catch (error) {
-      toast.error("Failed to add food to diary")
-      console.error('Error adding food:', error)
+      toast.error("Failed to add food to diary");
+      console.error("Error adding food:", error);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background">
-      
-      
       <main className="container mx-auto px-4 py-8">
         {/* Hero Section */}
         <div className="relative mb-8 rounded-xl overflow-hidden animate-fade-in">
-          <div 
+          <div
             className="h-48 bg-cover bg-center relative"
             style={{ backgroundImage: `url(${healthyFoodImage})` }}
           >
@@ -343,31 +357,48 @@ const adjustCalories = (newPortion: number) => {
               {/* Calories */}
               <FitnessCard variant="food" className="animate-slide-up">
                 <FitnessCardHeader className="pb-3">
-                  <FitnessCardTitle className="text-base">Calories</FitnessCardTitle>
+                  <FitnessCardTitle className="text-base">
+                    Calories
+                  </FitnessCardTitle>
                 </FitnessCardHeader>
                 <FitnessCardContent>
                   <div className="flex items-center justify-center mb-4">
-                    <ProgressRing 
-                      progress={(dailyGoals.calories.current / dailyGoals.calories.target) * 100}
+                    <ProgressRing
+                      progress={
+                        (dailyGoals.calories.current /
+                          dailyGoals.calories.target) *
+                        100
+                      }
                       size={80}
                       color="success"
                     >
                       <div className="text-center">
-                        <div className="text-sm font-bold">{dailyGoals.calories.current}</div>
-                        <div className="text-xs text-muted-foreground">/{dailyGoals.calories.target}</div>
+                        <div className="text-sm font-bold">
+                          {dailyGoals.calories.current}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          /{dailyGoals.calories.target}
+                        </div>
                       </div>
                     </ProgressRing>
                   </div>
                   <p className="text-xs text-center text-muted-foreground">
-                    {dailyGoals.calories.target - dailyGoals.calories.current} remaining
+                    {dailyGoals.calories.target - dailyGoals.calories.current}{" "}
+                    remaining
                   </p>
                 </FitnessCardContent>
               </FitnessCard>
 
               {/* Protein */}
-              <FitnessCard variant="gradient" className="animate-slide-up" style={{ animationDelay: "100ms" }}>
+              <FitnessCard
+                variant="gradient"
+                className="animate-slide-up"
+                style={{ animationDelay: "100ms" }}
+              >
                 <FitnessCardHeader className="pb-3">
-                  <FitnessCardTitle className="text-base">Protein</FitnessCardTitle>
+                  <FitnessCardTitle className="text-base">
+                    Protein
+                  </FitnessCardTitle>
                 </FitnessCardHeader>
                 <FitnessCardContent>
                   <div className="text-center space-y-2">
@@ -378,9 +409,15 @@ const adjustCalories = (newPortion: number) => {
                       </span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-2">
-                      <div 
+                      <div
                         className="bg-primary h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${(dailyGoals.protein.current / dailyGoals.protein.target) * 100}%` }}
+                        style={{
+                          width: `${
+                            (dailyGoals.protein.current /
+                              dailyGoals.protein.target) *
+                            100
+                          }%`,
+                        }}
                       />
                     </div>
                   </div>
@@ -388,9 +425,15 @@ const adjustCalories = (newPortion: number) => {
               </FitnessCard>
 
               {/* Carbs */}
-              <FitnessCard variant="gradient" className="animate-slide-up" style={{ animationDelay: "200ms" }}>
+              <FitnessCard
+                variant="gradient"
+                className="animate-slide-up"
+                style={{ animationDelay: "200ms" }}
+              >
                 <FitnessCardHeader className="pb-3">
-                  <FitnessCardTitle className="text-base">Carbs</FitnessCardTitle>
+                  <FitnessCardTitle className="text-base">
+                    Carbs
+                  </FitnessCardTitle>
                 </FitnessCardHeader>
                 <FitnessCardContent>
                   <div className="text-center space-y-2">
@@ -401,9 +444,15 @@ const adjustCalories = (newPortion: number) => {
                       </span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-2">
-                      <div 
+                      <div
                         className="bg-secondary h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${(dailyGoals.carbs.current / dailyGoals.carbs.target) * 100}%` }}
+                        style={{
+                          width: `${
+                            (dailyGoals.carbs.current /
+                              dailyGoals.carbs.target) *
+                            100
+                          }%`,
+                        }}
                       />
                     </div>
                   </div>
@@ -411,7 +460,11 @@ const adjustCalories = (newPortion: number) => {
               </FitnessCard>
 
               {/* Fat */}
-              <FitnessCard variant="gradient" className="animate-slide-up" style={{ animationDelay: "300ms" }}>
+              <FitnessCard
+                variant="gradient"
+                className="animate-slide-up"
+                style={{ animationDelay: "300ms" }}
+              >
                 <FitnessCardHeader className="pb-3">
                   <FitnessCardTitle className="text-base">Fat</FitnessCardTitle>
                 </FitnessCardHeader>
@@ -424,9 +477,14 @@ const adjustCalories = (newPortion: number) => {
                       </span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-2">
-                      <div 
+                      <div
                         className="bg-success h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${(dailyGoals.fat.current / dailyGoals.fat.target) * 100}%` }}
+                        style={{
+                          width: `${
+                            (dailyGoals.fat.current / dailyGoals.fat.target) *
+                            100
+                          }%`,
+                        }}
                       />
                     </div>
                   </div>
@@ -434,9 +492,11 @@ const adjustCalories = (newPortion: number) => {
               </FitnessCard>
             </div>
 
-
             {/* Recent Meals */}
-            <FitnessCard className="animate-slide-up" style={{ animationDelay: "500ms" }}>
+            <FitnessCard
+              className="animate-slide-up"
+              style={{ animationDelay: "500ms" }}
+            >
               <FitnessCardHeader>
                 <div className="flex items-center justify-between">
                   <FitnessCardTitle>Today's Meals</FitnessCardTitle>
@@ -446,14 +506,19 @@ const adjustCalories = (newPortion: number) => {
                   </FitnessButton>
                 </div>
               </FitnessCardHeader>
-              
+
               <FitnessCardContent>
                 <div className="space-y-4">
                   {isLoading ? (
-                    <p className="text-muted-foreground text-center py-4">Loading meals...</p>
+                    <p className="text-muted-foreground text-center py-4">
+                      Loading meals...
+                    </p>
                   ) : dailyFoods.length > 0 ? (
                     dailyFoods.slice(0, 5).map((food) => (
-                      <div key={food.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
+                      <div
+                        key={food.id}
+                        className="flex items-center justify-between p-3 rounded-lg border border-border"
+                      >
                         <div className="flex items-center gap-3">
                           <div className="text-2xl">🍽️</div>
                           <div>
@@ -465,14 +530,20 @@ const adjustCalories = (newPortion: number) => {
                         </div>
                         <div className="text-right">
                           <p className="font-semibold">{food.calories} cal</p>
-                          <FitnessButton variant="ghost" size="sm" className="text-xs">
+                          <FitnessButton
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs"
+                          >
                             Edit
                           </FitnessButton>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <p className="text-muted-foreground text-center py-4">No meals logged today</p>
+                    <p className="text-muted-foreground text-center py-4">
+                      No meals logged today
+                    </p>
                   )}
                 </div>
               </FitnessCardContent>
@@ -488,10 +559,11 @@ const adjustCalories = (newPortion: number) => {
                   <FitnessCardHeader>
                     <FitnessCardTitle>Scan Your Food</FitnessCardTitle>
                     <FitnessCardDescription>
-                      Take a photo of your meal for instant calorie and macro analysis
+                      Take a photo of your meal for instant calorie and macro
+                      analysis
                     </FitnessCardDescription>
                   </FitnessCardHeader>
-                  
+
                   <FitnessCardContent>
                     {!scanResult ? (
                       <div className="space-y-4">
@@ -499,7 +571,9 @@ const adjustCalories = (newPortion: number) => {
                         <div className="aspect-square bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-border">
                           <div className="text-center space-y-4">
                             <Camera className="w-12 h-12 text-muted-foreground mx-auto" />
-                            <p className="text-muted-foreground">Point camera at your food</p>
+                            <p className="text-muted-foreground">
+                              Point camera at your food
+                            </p>
                           </div>
                         </div>
 
@@ -509,7 +583,7 @@ const adjustCalories = (newPortion: number) => {
                             <Camera className="w-5 h-5" />
                             Take Photo
                           </FitnessButton>
-                          
+
                           <div>
                             <input
                               ref={fileInputRef}
@@ -518,7 +592,7 @@ const adjustCalories = (newPortion: number) => {
                               onChange={handleFileUpload}
                               className="hidden"
                             />
-                            <FitnessButton 
+                            <FitnessButton
                               variant="outline"
                               onClick={() => fileInputRef.current?.click()}
                               size="lg"
@@ -543,8 +617,8 @@ const adjustCalories = (newPortion: number) => {
                           </div>
                         </div>
 
-                        <FitnessButton 
-                          variant="outline" 
+                        <FitnessButton
+                          variant="outline"
                           onClick={() => setScanResult(null)}
                           className="w-full"
                         >
@@ -562,17 +636,23 @@ const adjustCalories = (newPortion: number) => {
                   <FitnessCardHeader>
                     <FitnessCardTitle>Nutrition Information</FitnessCardTitle>
                     <FitnessCardDescription>
-                      {scanResult ? "Adjust portion size to match your actual serving" : "Enter nutrition values manually"}
+                      {scanResult
+                        ? "Adjust portion size to match your actual serving"
+                        : "Enter nutrition values manually"}
                     </FitnessCardDescription>
                   </FitnessCardHeader>
-                  
+
                   <FitnessCardContent>
                     {/* Portion Slider - Only show if there's a scan result */}
                     {scanResult && (
                       <div className="space-y-4 mb-6">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Portion Size</span>
-                          <span className="text-sm text-muted-foreground">{portionSize}%</span>
+                          <span className="text-sm font-medium">
+                            Portion Size
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            {portionSize}%
+                          </span>
                         </div>
                         <Slider
                           value={[portionSize]}
@@ -593,57 +673,85 @@ const adjustCalories = (newPortion: number) => {
                       <div className="text-center p-4 bg-primary/10 rounded-lg">
                         <Input
                           type="number"
-                          value={editableValues.calories || ''}
-                          onChange={(e) => setEditableValues(prev => ({ ...prev, calories: Number(e.target.value) || 0 }))}
+                          value={editableValues.calories || ""}
+                          onChange={(e) =>
+                            setEditableValues((prev) => ({
+                              ...prev,
+                              calories: Number(e.target.value) || 0,
+                            }))
+                          }
                           className="text-2xl font-bold text-primary text-center border border-border/50 hover:border-border focus:border-primary bg-background/50"
                           min="0"
                           placeholder="Enter calories"
                         />
-                        <div className="text-sm text-muted-foreground mt-1">calories</div>
+                        <div className="text-sm text-muted-foreground mt-1">
+                          calories
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-3 gap-4 text-center">
                         <div className="p-3 bg-muted/50 rounded-lg">
                           <Input
                             type="number"
-                            value={editableValues.protein || ''}
-                            onChange={(e) => setEditableValues(prev => ({ ...prev, protein: Number(e.target.value) || 0 }))}
+                            value={editableValues.protein || ""}
+                            onChange={(e) =>
+                              setEditableValues((prev) => ({
+                                ...prev,
+                                protein: Number(e.target.value) || 0,
+                              }))
+                            }
                             className="font-semibold text-center border border-border/50 hover:border-border focus:border-primary bg-background/50"
                             min="0"
                             step="0.1"
                             placeholder="0"
                           />
-                          <div className="text-xs text-muted-foreground mt-1">Protein (g)</div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Protein (g)
+                          </div>
                         </div>
                         <div className="p-3 bg-muted/50 rounded-lg">
                           <Input
                             type="number"
-                            value={editableValues.carbs || ''}
-                            onChange={(e) => setEditableValues(prev => ({ ...prev, carbs: Number(e.target.value) || 0 }))}
+                            value={editableValues.carbs || ""}
+                            onChange={(e) =>
+                              setEditableValues((prev) => ({
+                                ...prev,
+                                carbs: Number(e.target.value) || 0,
+                              }))
+                            }
                             className="font-semibold text-center border border-border/50 hover:border-border focus:border-primary bg-background/50"
                             min="0"
                             step="0.1"
                             placeholder="0"
                           />
-                          <div className="text-xs text-muted-foreground mt-1">Carbs (g)</div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Carbs (g)
+                          </div>
                         </div>
                         <div className="p-3 bg-muted/50 rounded-lg">
                           <Input
                             type="number"
-                            value={editableValues.fat || ''}
-                            onChange={(e) => setEditableValues(prev => ({ ...prev, fat: Number(e.target.value) || 0 }))}
+                            value={editableValues.fat || ""}
+                            onChange={(e) =>
+                              setEditableValues((prev) => ({
+                                ...prev,
+                                fat: Number(e.target.value) || 0,
+                              }))
+                            }
                             className="font-semibold text-center border border-border/50 hover:border-border focus:border-primary bg-background/50"
                             min="0"
                             step="0.1"
                             placeholder="0"
                           />
-                          <div className="text-xs text-muted-foreground mt-1">Fat (g)</div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Fat (g)
+                          </div>
                         </div>
                       </div>
 
-                      <FitnessButton 
-                        onClick={handleAddToDiary} 
-                        className="w-full" 
+                      <FitnessButton
+                        onClick={handleAddToDiary}
+                        className="w-full"
                         size="lg"
                         disabled={editableValues.calories === 0}
                       >
@@ -663,83 +771,127 @@ const adjustCalories = (newPortion: number) => {
               <div className="lg:col-span-2">
                 <FitnessCard className="animate-slide-up">
                   <FitnessCardHeader>
-                    <FitnessCardTitle>Monthly Calorie Tracking</FitnessCardTitle>
+                    <FitnessCardTitle>
+                      Monthly Calorie Tracking
+                    </FitnessCardTitle>
                     <FitnessCardDescription>
                       Your daily calorie intake over the past 30 days
                     </FitnessCardDescription>
                   </FitnessCardHeader>
-                  
+
                   <FitnessCardContent>
                     {isLoadingHistory ? (
                       <div className="h-64 flex items-center justify-center">
                         <div className="text-center space-y-2">
                           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-                          <p className="text-muted-foreground">Loading history...</p>
+                          <p className="text-muted-foreground">
+                            Loading history...
+                          </p>
                         </div>
                       </div>
                     ) : historicalData.length > 0 ? (
-                      <div className="h-64 w-full">
-                        <ChartContainer
-                          config={{
-                            calories: {
-                              label: "Calories",
-                              color: "hsl(var(--primary))",
-                            },
-                          }}
-                        >
-                          <LineChart data={[...historicalData].reverse()} width={600} height={250}>
-                            <XAxis 
-                              dataKey="date"
-                              tick={{ fontSize: 9 }}
-                              tickLine={false}
-                              axisLine={false}
-                              tickFormatter={(date) => {
-                                const d = new Date(date)
-                                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                      <div className="h-80 w-full overflow-hidden">
+                        <div className="w-full h-full min-w-0">
+                          <ChartContainer
+                            config={{
+                              calories: {
+                                label: "Calories",
+                                color: "hsl(var(--primary))",
+                              },
+                            }}
+                            className="w-full h-full"
+                          >
+                            <LineChart
+                              data={[...historicalData].reverse()}
+                              margin={{
+                                top: 20,
+                                right: 20,
+                                left: 20,
+                                bottom: 40,
                               }}
-                              interval="preserveStartEnd"
-                            />
-                            <YAxis 
-                              tick={{ fontSize: 10 }}
-                              tickLine={false}
-                              axisLine={false}
-                            />
-                            <ChartTooltip
-                              content={({ active, payload, label }) => {
-                                if (active && payload && payload.length) {
-                                  const data = payload[0].payload
-                                  return (
-                                    <div className="bg-background border border-border rounded-lg p-3 shadow-lg">
-                                      <p className="font-medium">{new Date(label).toLocaleDateString()}</p>
-                                      <p className="text-primary font-semibold">
-                                        {payload[0].value} calories
-                                      </p>
-                                      <p className="text-xs text-muted-foreground">
-                                        {data.meals} meals logged
-                                      </p>
-                                    </div>
-                                  )
-                                }
-                                return null
-                              }}
-                            />
-                            <Line 
-                              type="monotone"
-                              dataKey="calories" 
-                              stroke="hsl(var(--primary))"
-                              strokeWidth={2}
-                              dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 3 }}
-                              activeDot={{ r: 5, stroke: "hsl(var(--primary))", strokeWidth: 2 }}
-                            />
-                          </LineChart>
-                        </ChartContainer>
+                            >
+                              <XAxis
+                                dataKey="date"
+                                tick={{
+                                  fontSize: 10,
+                                  fill: "hsl(var(--muted-foreground))",
+                                }}
+                                tickLine={{ stroke: "hsl(var(--border))" }}
+                                axisLine={{ stroke: "hsl(var(--border))" }}
+                                tickFormatter={(date) => {
+                                  const d = new Date(date);
+                                  return d.toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                  });
+                                }}
+                                interval="preserveStartEnd"
+                                height={50}
+                                angle={-45}
+                                textAnchor="end"
+                                tickMargin={10}
+                              />
+                              <YAxis
+                                tick={{
+                                  fontSize: 12,
+                                  fill: "hsl(var(--muted-foreground))",
+                                }}
+                                tickLine={{ stroke: "hsl(var(--border))" }}
+                                axisLine={{ stroke: "hsl(var(--border))" }}
+                                tickFormatter={(value) => `${value}`}
+                                width={60}
+                              />
+                              <ChartTooltip
+                                content={({ active, payload, label }) => {
+                                  if (active && payload && payload.length) {
+                                    const data = payload[0].payload;
+                                    return (
+                                      <div className="bg-background border border-border rounded-lg p-3 shadow-lg">
+                                        <p className="font-medium">
+                                          {new Date(label).toLocaleDateString()}
+                                        </p>
+                                        <p className="text-primary font-semibold">
+                                          {payload[0].value} calories
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {data.meals} meals logged
+                                        </p>
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                }}
+                              />
+                              <Line
+                                type="monotone"
+                                dataKey="calories"
+                                stroke="hsl(var(--primary))"
+                                strokeWidth={3}
+                                dot={{
+                                  fill: "hsl(var(--primary))",
+                                  strokeWidth: 2,
+                                  r: 4,
+                                  stroke: "hsl(var(--background))",
+                                }}
+                                activeDot={{
+                                  r: 6,
+                                  stroke: "hsl(var(--primary))",
+                                  strokeWidth: 2,
+                                  fill: "hsl(var(--background))",
+                                }}
+                              />
+                            </LineChart>
+                          </ChartContainer>
+                        </div>
                       </div>
                     ) : (
                       <div className="h-64 flex items-center justify-center text-muted-foreground">
                         <div className="text-center space-y-2">
                           <Utensils className="w-12 h-12 mx-auto opacity-50" />
                           <p>No nutrition history available</p>
-                          <p className="text-sm">Start logging meals to see your progress</p>
+                          <p className="text-sm">
+                            Start logging meals to see your progress
+                          </p>
                         </div>
                       </div>
                     )}
@@ -749,32 +901,56 @@ const adjustCalories = (newPortion: number) => {
 
               {/* Summary Stats */}
               <div className="space-y-4">
-                <FitnessCard className="animate-slide-up" style={{ animationDelay: "100ms" }}>
+                <FitnessCard
+                  className="animate-slide-up"
+                  style={{ animationDelay: "100ms" }}
+                >
                   <FitnessCardHeader>
-                    <FitnessCardTitle className="text-base">30-Day Summary</FitnessCardTitle>
+                    <FitnessCardTitle className="text-base">
+                      30-Day Summary
+                    </FitnessCardTitle>
                   </FitnessCardHeader>
                   <FitnessCardContent>
                     {historicalData.length > 0 ? (
                       <div className="space-y-4">
                         <div className="text-center">
                           <div className="text-2xl font-bold text-primary">
-                            {Math.round(historicalData.reduce((sum, day) => sum + day.calories, 0) / historicalData.length)}
+                            {Math.round(
+                              historicalData.reduce(
+                                (sum, day) => sum + day.calories,
+                                0
+                              ) / historicalData.length
+                            )}
                           </div>
-                          <div className="text-xs text-muted-foreground">Avg calories/day</div>
+                          <div className="text-xs text-muted-foreground">
+                            Avg calories/day
+                          </div>
                         </div>
-                        
+
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
                             <span>Days tracked:</span>
-                            <span className="font-medium">{historicalData.length}</span>
+                            <span className="font-medium">
+                              {historicalData.length}
+                            </span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span>Total meals:</span>
-                            <span className="font-medium">{historicalData.reduce((sum, day) => sum + day.meals, 0)}</span>
+                            <span className="font-medium">
+                              {historicalData.reduce(
+                                (sum, day) => sum + day.meals,
+                                0
+                              )}
+                            </span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span>Highest day:</span>
-                            <span className="font-medium">{Math.max(...historicalData.map(d => d.calories))} cal</span>
+                            <span className="font-medium">
+                              {Math.max(
+                                ...historicalData.map((d) => d.calories)
+                              )}{" "}
+                              cal
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -786,15 +962,20 @@ const adjustCalories = (newPortion: number) => {
                   </FitnessCardContent>
                 </FitnessCard>
 
-                <FitnessCard className="animate-slide-up" style={{ animationDelay: "200ms" }}>
+                <FitnessCard
+                  className="animate-slide-up"
+                  style={{ animationDelay: "200ms" }}
+                >
                   <FitnessCardHeader>
-                    <FitnessCardTitle className="text-base">Quick Actions</FitnessCardTitle>
+                    <FitnessCardTitle className="text-base">
+                      Quick Actions
+                    </FitnessCardTitle>
                   </FitnessCardHeader>
                   <FitnessCardContent>
                     <div className="space-y-2">
-                      <FitnessButton 
-                        variant="outline" 
-                        size="sm" 
+                      <FitnessButton
+                        variant="outline"
+                        size="sm"
                         className="w-full justify-start"
                         onClick={loadHistoryData}
                       >
@@ -820,7 +1001,7 @@ const adjustCalories = (newPortion: number) => {
                     ✕
                   </FitnessButton>
                 </div>
-                
+
                 <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
                   <video
                     ref={videoRef}
@@ -828,14 +1009,18 @@ const adjustCalories = (newPortion: number) => {
                     playsInline
                     muted
                     className="w-full h-full object-cover"
-                    style={{ 
-                      display: 'block',
-                      minHeight: '300px'
+                    style={{
+                      display: "block",
+                      minHeight: "300px",
                     }}
                   />
                 </div>
-                
-                <FitnessButton onClick={capturePhoto} className="w-full" size="lg">
+
+                <FitnessButton
+                  onClick={capturePhoto}
+                  className="w-full"
+                  size="lg"
+                >
                   <Camera className="w-5 h-5 mr-2" />
                   Capture Photo
                 </FitnessButton>
@@ -848,7 +1033,7 @@ const adjustCalories = (newPortion: number) => {
         <canvas ref={canvasRef} className="hidden" />
       </main>
     </div>
-  )
-}
+  );
+};
 
-export default NutritionPage
+export default NutritionPage;

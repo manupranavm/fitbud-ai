@@ -1,58 +1,79 @@
-import React, { useState } from "react"
-import { Link } from "react-router-dom"
-import toast from "react-hot-toast"
-import { Eye, EyeOff, Mail, Lock, User, ArrowLeft } from "lucide-react"
-import { useAuth } from "@/hooks/useAuth"
-import { FitnessButton } from "@/components/ui/fitness-button"
-import { FitnessCard, FitnessCardContent, FitnessCardDescription, FitnessCardHeader, FitnessCardTitle } from "@/components/ui/fitness-card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
-import gymImage from "@/assets/gym-workout.jpg"
+import gymImage from "@/assets/gym-workout.jpg";
+import { FitnessButton } from "@/components/ui/fitness-button";
+import { FitnessCard, FitnessCardContent } from "@/components/ui/fitness-card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/hooks/useAuth";
+import { ArrowLeft, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
+import React, { useState } from "react";
+import toast from "react-hot-toast";
+import { Link, useNavigate } from "react-router-dom";
 
 interface AuthPageProps {
-  type: "login" | "signup"
+  type: "login" | "signup";
 }
 
 const AuthPage: React.FC<AuthPageProps> = ({ type }) => {
-  const { login, signup, isLoading } = useAuth()
-  const [showPassword, setShowPassword] = useState(false)
+  const { login, signup, isLoading, user } = useAuth();
+  const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
-    confirmPassword: ""
-  })
+    confirmPassword: "",
+  });
 
-  const isLogin = type === "login"
-  const title = isLogin ? "Welcome Back" : "Start Your Journey"
-  const subtitle = isLogin 
-    ? "Sign in to continue your fitness transformation" 
-    : "Create your account and begin achieving your goals"
+  const isLogin = type === "login";
+  const title = isLogin ? "Welcome Back" : "Start Your Journey";
+  const subtitle = isLogin
+    ? "Sign in to continue your fitness transformation"
+    : "Create your account and begin achieving your goals";
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
+    e.preventDefault();
+
     try {
       if (isLogin) {
-        await login(formData.email, formData.password)
-        toast.success("Welcome back!")
+        await login(formData.email, formData.password);
+        toast.success("Welcome back!");
+        navigate("/dashboard");
       } else {
         if (formData.password !== formData.confirmPassword) {
-          toast.error("Passwords don't match")
-          return
+          toast.error("Passwords don't match");
+          return;
         }
-        await signup(formData.name, formData.email, formData.password)
-        toast.success("Account created successfully!")
+
+        try {
+          await signup(formData.name, formData.email, formData.password);
+          toast.success("Account created successfully!");
+          navigate("/onboarding");
+        } catch (error) {
+          // Check if this is an email confirmation error
+          if (
+            error instanceof Error &&
+            error.message.includes("check your email")
+          ) {
+            toast.success(
+              "Account created! Please check your email to confirm your account."
+            );
+            navigate("/login");
+          } else {
+            throw error; // Re-throw other errors
+          }
+        }
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Authentication failed")
+      toast.error(
+        error instanceof Error ? error.message : "Authentication failed"
+      );
     }
-  }
+  };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   return (
     <div className="min-h-screen flex">
@@ -62,7 +83,10 @@ const AuthPage: React.FC<AuthPageProps> = ({ type }) => {
           {/* Back to Landing */}
           <div className="flex items-center">
             <FitnessButton asChild variant="ghost" size="sm" className="p-0">
-              <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
+              <Link
+                to="/"
+                className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+              >
                 <ArrowLeft className="w-4 h-4" />
                 Back to Home
               </Link>
@@ -89,7 +113,9 @@ const AuthPage: React.FC<AuthPageProps> = ({ type }) => {
                         type="text"
                         placeholder="Enter your full name"
                         value={formData.name}
-                        onChange={(e) => handleInputChange("name", e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange("name", e.target.value)
+                        }
                         className="pl-10"
                         required
                       />
@@ -106,7 +132,9 @@ const AuthPage: React.FC<AuthPageProps> = ({ type }) => {
                       type="email"
                       placeholder="Enter your email"
                       value={formData.email}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("email", e.target.value)
+                      }
                       className="pl-10"
                       required
                     />
@@ -122,7 +150,9 @@ const AuthPage: React.FC<AuthPageProps> = ({ type }) => {
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
                       value={formData.password}
-                      onChange={(e) => handleInputChange("password", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("password", e.target.value)
+                      }
                       className="pl-10 pr-10"
                       required
                     />
@@ -133,7 +163,11 @@ const AuthPage: React.FC<AuthPageProps> = ({ type }) => {
                       className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
                     </FitnessButton>
                   </div>
                 </div>
@@ -148,7 +182,9 @@ const AuthPage: React.FC<AuthPageProps> = ({ type }) => {
                         type="password"
                         placeholder="Confirm your password"
                         value={formData.confirmPassword}
-                        onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange("confirmPassword", e.target.value)
+                        }
                         className="pl-10"
                         required
                       />
@@ -158,8 +194,8 @@ const AuthPage: React.FC<AuthPageProps> = ({ type }) => {
 
                 {isLogin && (
                   <div className="flex justify-end">
-                    <Link 
-                      to="/forgot-password" 
+                    <Link
+                      to="/forgot-password"
                       className="text-sm text-primary hover:underline"
                     >
                       Forgot password?
@@ -167,8 +203,17 @@ const AuthPage: React.FC<AuthPageProps> = ({ type }) => {
                   </div>
                 )}
 
-                <FitnessButton type="submit" className="w-full" size="lg" disabled={isLoading}>
-                  {isLoading ? "Please wait..." : (isLogin ? "Sign In" : "Create Account")}
+                <FitnessButton
+                  type="submit"
+                  className="w-full"
+                  size="lg"
+                  disabled={isLoading}
+                >
+                  {isLoading
+                    ? "Please wait..."
+                    : isLogin
+                    ? "Sign In"
+                    : "Create Account"}
                 </FitnessButton>
               </form>
 
@@ -178,7 +223,9 @@ const AuthPage: React.FC<AuthPageProps> = ({ type }) => {
                     <Separator />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                    <span className="bg-card px-2 text-muted-foreground">
+                      Or continue with
+                    </span>
                   </div>
                 </div>
 
@@ -207,10 +254,12 @@ const AuthPage: React.FC<AuthPageProps> = ({ type }) => {
 
               <div className="mt-6 text-center text-sm">
                 <span className="text-muted-foreground">
-                  {isLogin ? "Don't have an account?" : "Already have an account?"}
+                  {isLogin
+                    ? "Don't have an account?"
+                    : "Already have an account?"}
                 </span>{" "}
-                <Link 
-                  to={isLogin ? "/signup" : "/login"} 
+                <Link
+                  to={isLogin ? "/signup" : "/login"}
                   className="text-primary hover:underline font-medium"
                 >
                   {isLogin ? "Sign up" : "Sign in"}
@@ -235,7 +284,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ type }) => {
 
       {/* Right Side - Hero Image */}
       <div className="hidden lg:block lg:flex-1 relative">
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${gymImage})` }}
         />
@@ -246,13 +295,14 @@ const AuthPage: React.FC<AuthPageProps> = ({ type }) => {
               Your Fitness Journey Starts Here
             </h2>
             <p className="text-body-lg opacity-90">
-              Join thousands who have transformed their lives with AI-powered fitness guidance
+              Join thousands who have transformed their lives with AI-powered
+              fitness guidance
             </p>
           </div>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default AuthPage
+export default AuthPage;

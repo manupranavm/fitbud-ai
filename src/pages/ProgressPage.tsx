@@ -1,494 +1,758 @@
-import React, { useState, useEffect } from "react"
-import { 
-  TrendingUp, 
-  Calendar, 
-  Target, 
-  Award,
-  ChevronDown,
-  Filter
-} from "lucide-react"
+import progressImage from "@/assets/hero-fitness.jpg";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
+import { FitnessButton } from "@/components/ui/fitness-button";
+import {
+  FitnessCard,
+  FitnessCardContent,
+  FitnessCardHeader,
+  FitnessCardTitle,
+} from "@/components/ui/fitness-card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { format, parseISO } from "date-fns";
+import {
+  Calendar,
+  Camera,
+  Image as ImageIcon,
+  Minus,
+  Trash2,
+  TrendingDown,
+  TrendingUp,
+  Upload,
+  Weight,
+} from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Line, LineChart, XAxis, YAxis } from "recharts";
 
-import { FitnessButton } from "@/components/ui/fitness-button"
-import { FitnessCard, FitnessCardContent, FitnessCardDescription, FitnessCardHeader, FitnessCardTitle } from "@/components/ui/fitness-card"
-import { ProgressRing } from "@/components/ui/progress-ring"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useWorkout } from "@/hooks/useWorkout"
-import { useNutrition } from "@/hooks/useNutrition"
+interface WeightEntry {
+  id: string;
+  weight: number;
+  unit: "kg" | "lbs";
+  date: string;
+  created_at: string;
+}
+
+interface ProgressPhoto {
+  id: string;
+  url: string;
+  type: "front" | "side" | "back";
+  date: string;
+  created_at: string;
+}
+
+interface WeightStats {
+  current: number;
+  change: number;
+  changePercent: number;
+  trend: "up" | "down" | "stable";
+}
 
 const ProgressPage: React.FC = () => {
-  const [timeRange, setTimeRange] = useState("30")
-  const { totalWorkouts, currentStreak, workoutHistory, totalCaloriesBurned } = useWorkout()
-  const { getDailyTotalsForDateRange } = useNutrition()
+  const [weightEntries, setWeightEntries] = useState<WeightEntry[]>([]);
+  const [progressPhotos, setProgressPhotos] = useState<ProgressPhoto[]>([]);
+  const [currentWeight, setCurrentWeight] = useState<string>("");
+  const [weightUnit, setWeightUnit] = useState<"kg" | "lbs">("kg");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedPhotoType, setSelectedPhotoType] = useState<
+    "front" | "side" | "back"
+  >("front");
+  const [weightStats, setWeightStats] = useState<WeightStats | null>(null);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<ProgressPhoto | null>(
+    null
+  );
 
-  // Calculate average workout time from history
-  const calculateAverageWorkoutTime = () => {
-    if (workoutHistory.length === 0) return 0
-    const totalDuration = workoutHistory.reduce((sum, workout) => sum + workout.duration, 0)
-    return Math.round(totalDuration / workoutHistory.length)
-  }
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  // Calculate this week's workouts
-  const calculateThisWeeksWorkouts = () => {
-    const today = new Date()
-    const startOfWeek = new Date(today)
-    startOfWeek.setDate(today.getDate() - today.getDay())
-    
-    return workoutHistory.filter(workout => {
-      const workoutDate = new Date(workout.date)
-      return workoutDate >= startOfWeek && workoutDate <= today && workout.completed
-    }).length
-  }
-
-  // Calculate weekly goal progress
-  const calculateWeeklyProgress = () => {
-    const thisWeekWorkouts = calculateThisWeeksWorkouts()
-    const weeklyGoal = 5 // Target 5 workouts per week
-    return Math.round((thisWeekWorkouts / weeklyGoal) * 100)
-  }
-
-  // Real data from stores
-  const stats = {
-    totalWorkouts: totalWorkouts,
-    totalCaloriesBurned: totalCaloriesBurned,
-    averageWorkoutTime: calculateAverageWorkoutTime(),
-    streak: currentStreak,
-    weeklyGoalProgress: calculateWeeklyProgress()
-  }
-
-  // Format workout history for display
-  const formatWorkoutHistory = () => {
-    return workoutHistory.slice(0, 5).map(workout => {
-      const workoutDate = new Date(workout.date)
-      const today = new Date()
-      const yesterday = new Date(today)
-      yesterday.setDate(today.getDate() - 1)
-      
-      let displayDate = workoutDate.toLocaleDateString()
-      if (workoutDate.toDateString() === today.toDateString()) {
-        displayDate = "Today"
-      } else if (workoutDate.toDateString() === yesterday.toDateString()) {
-        displayDate = "Yesterday"
-      } else {
-        const diffTime = Math.abs(today.getTime() - workoutDate.getTime())
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-        if (diffDays <= 7) {
-          displayDate = `${diffDays} days ago`
-        }
-      }
-
-      return {
-        date: displayDate,
-        workout: workout.name,
-        duration: workout.duration,
-        calories: Math.round(workout.duration * 7), // Estimate 7 calories per minute
-        completed: workout.completed
-      }
-    })
-  }
-
-  // Get monthly data from workout history
-  const getMonthlyData = () => {
-    const monthlyStats: Record<string, { workouts: number; calories: number }> = {}
-    
-    workoutHistory.forEach(workout => {
-      const date = new Date(workout.date)
-      const monthKey = date.toLocaleDateString('en-US', { month: 'short' })
-      
-      if (!monthlyStats[monthKey]) {
-        monthlyStats[monthKey] = { workouts: 0, calories: 0 }
-      }
-      
-      if (workout.completed) {
-        monthlyStats[monthKey].workouts += 1
-        monthlyStats[monthKey].calories += Math.round(workout.duration * 7) // Estimate
-      }
-    })
-
-    // Get last 3 months or fill with current data
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    const currentMonth = new Date().getMonth()
-    const last3Months = []
-    
-    for (let i = 2; i >= 0; i--) {
-      const monthIndex = (currentMonth - i + 12) % 12
-      const monthName = months[monthIndex]
-      last3Months.push({
-        month: monthName,
-        workouts: monthlyStats[monthName]?.workouts || 0,
-        calories: monthlyStats[monthName]?.calories || 0
-      })
+  // Load user's weight history and photos
+  useEffect(() => {
+    if (user) {
+      loadWeightHistory();
+      loadProgressPhotos();
     }
-    
-    return last3Months
-  }
+  }, [user]);
 
-  const workoutHistoryFormatted = formatWorkoutHistory()
-  const monthlyData = getMonthlyData()
+  // Calculate weight statistics
+  useEffect(() => {
+    if (weightEntries.length >= 2) {
+      const sorted = [...weightEntries].sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+      const latest = sorted[sorted.length - 1];
+      const previous = sorted[sorted.length - 2];
 
-  // Generate achievements based on real data
-  const generateAchievements = () => {
-    const achievements = []
-    
-    // First Week Complete
-    if (totalWorkouts >= 5) {
-      achievements.push({
-        name: "First Week Complete",
-        description: "Completed your first week of workouts",
-        earned: true,
-        date: "Achievement unlocked!"
-      })
-    } else {
-      achievements.push({
-        name: "First Week Complete",
-        description: "Complete 5 workouts",
-        earned: false,
-        progress: Math.round((totalWorkouts / 5) * 100)
-      })
+      const change = latest.weight - previous.weight;
+      const changePercent = (change / previous.weight) * 100;
+
+      setWeightStats({
+        current: latest.weight,
+        change: Math.abs(change),
+        changePercent: Math.abs(changePercent),
+        trend: change > 0 ? "up" : change < 0 ? "down" : "stable",
+      });
+    } else if (weightEntries.length === 1) {
+      setWeightStats({
+        current: weightEntries[0].weight,
+        change: 0,
+        changePercent: 0,
+        trend: "stable",
+      });
+    }
+  }, [weightEntries]);
+
+  const loadWeightHistory = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("weight_entries" as any)
+        .select("*")
+        .eq("user_id", user.id)
+        .order("date", { ascending: true });
+
+      if (error) throw error;
+      setWeightEntries((data as WeightEntry[]) || []);
+    } catch (error) {
+      console.error("Error loading weight history:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load weight history",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const loadProgressPhotos = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("progress_photos" as any)
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setProgressPhotos((data as ProgressPhoto[]) || []);
+    } catch (error) {
+      console.error("Error loading progress photos:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load progress photos",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const saveWeight = async () => {
+    if (!user || !currentWeight) return;
+
+    const weight = parseFloat(currentWeight);
+    if (isNaN(weight) || weight <= 0) {
+      toast({
+        title: "Invalid Weight",
+        description: "Please enter a valid weight",
+        variant: "destructive",
+      });
+      return;
     }
 
-    // Consistency Achievement
-    if (currentStreak >= 7) {
-      achievements.push({
-        name: "Consistency Champion",
-        description: `${currentStreak} days workout streak`,
-        earned: true,
-        date: "Keep it up!"
-      })
-    } else {
-      achievements.push({
-        name: "Consistency Champion",
-        description: "Maintain a 7-day workout streak",
-        earned: false,
-        progress: Math.round((currentStreak / 7) * 100)
-      })
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.from("weight_entries" as any).insert({
+        user_id: user.id,
+        weight,
+        unit: weightUnit,
+        date: new Date().toISOString().split("T")[0],
+      });
+
+      if (error) throw error;
+
+      setCurrentWeight("");
+      await loadWeightHistory();
+
+      toast({
+        title: "Weight Saved",
+        description: "Your weight has been recorded successfully",
+      });
+    } catch (error) {
+      console.error("Error saving weight:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save weight",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    // Calorie Crusher
-    if (stats.totalCaloriesBurned >= 1000) {
-      achievements.push({
-        name: "Calorie Crusher",
-        description: `Burned ${stats.totalCaloriesBurned}+ calories`,
-        earned: true,
-        date: "Amazing progress!"
-      })
-    } else {
-      achievements.push({
-        name: "Calorie Crusher",
-        description: "Burn 1000+ calories total",
-        earned: false,
-        progress: Math.round((stats.totalCaloriesBurned / 1000) * 100)
-      })
+  const uploadProgressPhoto = async (file: File) => {
+    if (!user) return;
+
+    setIsUploading(true);
+    try {
+      // Upload file to Supabase Storage
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("progress-photos")
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("progress-photos").getPublicUrl(fileName);
+
+      // Save photo metadata to database
+      const { error: dbError } = await supabase
+        .from("progress_photos" as any)
+        .insert({
+          user_id: user.id,
+          url: publicUrl,
+          type: selectedPhotoType,
+          date: new Date().toISOString().split("T")[0],
+        });
+
+      if (dbError) throw dbError;
+
+      await loadProgressPhotos();
+
+      toast({
+        title: "Photo Uploaded",
+        description: "Your progress photo has been saved",
+      });
+    } catch (error) {
+      console.error("Error uploading photo:", error);
+      toast({
+        title: "Upload Error",
+        description: "Failed to upload progress photo",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
     }
+  };
 
-    // Monthly Goal
-    const monthlyTarget = 20
-    achievements.push({
-      name: "Monthly Goal",
-      description: `Complete ${monthlyTarget} workouts in a month`,
-      earned: totalWorkouts >= monthlyTarget,
-      ...(totalWorkouts >= monthlyTarget 
-        ? { date: "Goal achieved!" }
-        : { progress: Math.round((totalWorkouts / monthlyTarget) * 100) }
-      )
-    })
-
-    // Workout Variety
-    const uniqueWorkouts = new Set(workoutHistory.map(w => w.name)).size
-    if (uniqueWorkouts >= 5) {
-      achievements.push({
-        name: "Variety Master",
-        description: `Tried ${uniqueWorkouts} different workout types`,
-        earned: true,
-        date: "Great variety!"
-      })
-    } else {
-      achievements.push({
-        name: "Variety Master",
-        description: "Try 5 different workout types",
-        earned: false,
-        progress: Math.round((uniqueWorkouts / 5) * 100)
-      })
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      uploadProgressPhoto(file);
     }
+  };
 
-    return achievements
-  }
+  const deleteWeightEntry = async (id: string) => {
+    if (!user) return;
 
-  const achievements = generateAchievements()
+    try {
+      const { error } = await supabase
+        .from("weight_entries" as any)
+        .delete()
+        .eq("id", id)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      await loadWeightHistory();
+
+      toast({
+        title: "Weight Deleted",
+        description: "Weight entry has been removed",
+      });
+    } catch (error) {
+      console.error("Error deleting weight:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete weight entry",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteProgressPhoto = async (id: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from("progress_photos" as any)
+        .delete()
+        .eq("id", id)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      await loadProgressPhotos();
+
+      toast({
+        title: "Photo Deleted",
+        description: "Progress photo has been removed",
+      });
+    } catch (error) {
+      console.error("Error deleting photo:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete progress photo",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Prepare chart data
+  const chartData = weightEntries.map((entry) => ({
+    date: format(parseISO(entry.date), "MMM dd"),
+    weight: entry.weight,
+    fullDate: entry.date,
+  }));
+
+  // Group photos by date
+  const photosByDate = progressPhotos.reduce((acc, photo) => {
+    const date = photo.date;
+    if (!acc[date]) acc[date] = [];
+    acc[date].push(photo);
+    return acc;
+  }, {} as Record<string, ProgressPhoto[]>);
+
+  const getTrendIcon = (trend: string) => {
+    switch (trend) {
+      case "up":
+        return <TrendingUp className="w-4 h-4 text-destructive" />;
+      case "down":
+        return <TrendingDown className="w-4 h-4 text-success" />;
+      default:
+        return <Minus className="w-4 h-4 text-muted-foreground" />;
+    }
+  };
+
+  const getTrendColor = (trend: string) => {
+    switch (trend) {
+      case "up":
+        return "text-destructive";
+      case "down":
+        return "text-success";
+      default:
+        return "text-muted-foreground";
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      
-      
-      <main className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8 animate-fade-in">
-          <div>
-            <h1 className="text-heading-lg mb-2">Your Progress</h1>
-            <p className="text-muted-foreground">
-              Track your fitness journey and celebrate achievements
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <Select value={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7">Last 7 days</SelectItem>
-                <SelectItem value="30">Last 30 days</SelectItem>
-                <SelectItem value="90">Last 3 months</SelectItem>
-                <SelectItem value="365">Last year</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <FitnessButton variant="outline" size="icon">
-              <Filter className="w-4 h-4" />
-            </FitnessButton>
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        {/* Hero Section */}
+        <div className="relative mb-8 rounded-xl overflow-hidden animate-fade-in">
+          <div
+            className="h-48 bg-cover bg-center relative"
+            style={{ backgroundImage: `url(${progressImage})` }}
+          >
+            <div className="absolute inset-0 bg-gradient-overlay" />
+            <div className="relative z-10 p-6 flex items-end h-full">
+              <div className="text-white">
+                <h1 className="text-heading-lg mb-2">Progress Tracking</h1>
+                <p className="text-body opacity-90">
+                  Track your weight and body transformation journey
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="workouts">Workouts</TabsTrigger>
-            <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
-            <TabsTrigger value="achievements">Achievements</TabsTrigger>
+        <Tabs defaultValue="weight" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="weight">Weight Tracking</TabsTrigger>
+            <TabsTrigger value="photos">Progress Photos</TabsTrigger>
           </TabsList>
 
-          {/* Overview */}
-          <TabsContent value="overview" className="space-y-6">
-            {/* Key Stats */}
-            <div className="grid lg:grid-cols-5 md:grid-cols-3 sm:grid-cols-2 gap-6">
-              <FitnessCard variant="workout" className="animate-slide-up">
-                <FitnessCardHeader className="pb-3">
-                  <FitnessCardTitle className="text-sm">Total Workouts</FitnessCardTitle>
-                </FitnessCardHeader>
-                <FitnessCardContent>
-                  <div className="text-2xl font-bold text-primary">{stats.totalWorkouts}</div>
-                  <p className="text-xs text-muted-foreground mt-1">This month</p>
-                </FitnessCardContent>
-              </FitnessCard>
-
-              <FitnessCard variant="gradient" className="animate-slide-up" style={{ animationDelay: "100ms" }}>
-                <FitnessCardHeader className="pb-3">
-                  <FitnessCardTitle className="text-sm">Calories Burned</FitnessCardTitle>
-                </FitnessCardHeader>
-                <FitnessCardContent>
-                  <div className="text-2xl font-bold text-secondary">{stats.totalCaloriesBurned.toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground mt-1">Total</p>
-                </FitnessCardContent>
-              </FitnessCard>
-
-              <FitnessCard variant="gradient" className="animate-slide-up" style={{ animationDelay: "200ms" }}>
-                <FitnessCardHeader className="pb-3">
-                  <FitnessCardTitle className="text-sm">Avg Workout</FitnessCardTitle>
-                </FitnessCardHeader>
-                <FitnessCardContent>
-                  <div className="text-2xl font-bold text-success">{stats.averageWorkoutTime}</div>
-                  <p className="text-xs text-muted-foreground mt-1">minutes</p>
-                </FitnessCardContent>
-              </FitnessCard>
-
-              <FitnessCard variant="interactive" className="animate-slide-up" style={{ animationDelay: "300ms" }}>
-                <FitnessCardHeader className="pb-3">
-                  <FitnessCardTitle className="text-sm">Current Streak</FitnessCardTitle>
-                </FitnessCardHeader>
-                <FitnessCardContent>
-                  <div className="text-2xl font-bold">{stats.streak}</div>
-                  <p className="text-xs text-yellow-500 mt-1">🔥 Days active</p>
-                </FitnessCardContent>
-              </FitnessCard>
-
-              <FitnessCard variant="progress" className="animate-slide-up" style={{ animationDelay: "400ms" }}>
-                <FitnessCardHeader className="pb-3">
-                  <FitnessCardTitle className="text-sm">Weekly Goal</FitnessCardTitle>
-                </FitnessCardHeader>
-                <FitnessCardContent>
-                  <div className="flex items-center justify-center">
-                    <ProgressRing 
-                      progress={stats.weeklyGoalProgress}
-                      size={60}
-                      color="primary"
-                    >
-                      <div className="text-center">
-                        <div className="text-sm font-bold">{stats.weeklyGoalProgress}%</div>
-                      </div>
-                    </ProgressRing>
-                  </div>
-                </FitnessCardContent>
-              </FitnessCard>
-            </div>
-
-            {/* Monthly Progress Chart */}
-            <FitnessCard className="animate-slide-up" style={{ animationDelay: "500ms" }}>
-              <FitnessCardHeader>
-                <FitnessCardTitle>Monthly Progress</FitnessCardTitle>
-                <FitnessCardDescription>
-                  Your workout consistency over the past 3 months
-                </FitnessCardDescription>
-              </FitnessCardHeader>
-              
-              <FitnessCardContent>
-                <div className="space-y-6">
-                  {monthlyData.map((month, index) => (
-                    <div key={month.month} className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium">{month.month}</span>
-                        <div className="flex items-center gap-4 text-muted-foreground">
-                          <span>{month.workouts} workouts</span>
-                          <span>{month.calories.toLocaleString()} cal</span>
-                        </div>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div 
-                          className="bg-primary h-2 rounded-full transition-all duration-500"
-                          style={{ 
-                            width: `${(month.workouts / Math.max(...monthlyData.map(m => m.workouts))) * 100}%`,
-                            animationDelay: `${index * 200}ms`
-                          }}
+          {/* Weight Tracking Tab */}
+          <TabsContent value="weight" className="space-y-6">
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* Weight Input and Chart */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Weight Input */}
+                <FitnessCard>
+                  <FitnessCardHeader>
+                    <FitnessCardTitle className="flex items-center gap-2">
+                      <Weight className="w-5 h-5" />
+                      Add Weight Entry
+                    </FitnessCardTitle>
+                  </FitnessCardHeader>
+                  <FitnessCardContent>
+                    <div className="flex gap-4 items-end">
+                      <div className="flex-1">
+                        <Label htmlFor="weight">Current Weight</Label>
+                        <Input
+                          id="weight"
+                          type="number"
+                          placeholder="Enter weight"
+                          value={currentWeight}
+                          onChange={(e) => setCurrentWeight(e.target.value)}
+                          className="mt-1"
                         />
                       </div>
+                      <div className="w-20">
+                        <Label htmlFor="unit">Unit</Label>
+                        <select
+                          id="unit"
+                          value={weightUnit}
+                          onChange={(e) =>
+                            setWeightUnit(e.target.value as "kg" | "lbs")
+                          }
+                          className="mt-1 w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
+                        >
+                          <option value="kg">kg</option>
+                          <option value="lbs">lbs</option>
+                        </select>
+                      </div>
+                      <FitnessButton
+                        onClick={saveWeight}
+                        disabled={isLoading || !currentWeight}
+                        className="mb-1"
+                      >
+                        {isLoading ? "Saving..." : "Save"}
+                      </FitnessButton>
                     </div>
-                  ))}
-                </div>
-              </FitnessCardContent>
-            </FitnessCard>
-          </TabsContent>
+                  </FitnessCardContent>
+                </FitnessCard>
 
-          {/* Workouts */}
-          <TabsContent value="workouts" className="space-y-6">
-            <FitnessCard className="animate-slide-up">
-              <FitnessCardHeader>
-                <FitnessCardTitle>Recent Workouts</FitnessCardTitle>
-                <FitnessCardDescription>
-                  Your workout history for the past week
-                </FitnessCardDescription>
-              </FitnessCardHeader>
-              
-               <FitnessCardContent>
-                 <div className="space-y-4">
-                   {workoutHistoryFormatted.length > 0 ? (
-                     workoutHistoryFormatted.map((workout, index) => (
-                       <div 
-                         key={index}
-                         className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
-                       >
-                         <div className="flex items-center gap-4">
-                           <div className="w-2 h-2 bg-primary rounded-full" />
-                           <div>
-                             <p className="font-medium">{workout.workout}</p>
-                             <p className="text-sm text-muted-foreground">{workout.date}</p>
-                           </div>
-                         </div>
-                         
-                         <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                           <div className="text-center">
-                             <div className="font-medium text-foreground">{workout.duration}</div>
-                             <div>minutes</div>
-                           </div>
-                           <div className="text-center">
-                             <div className="font-medium text-foreground">{workout.calories}</div>
-                             <div>calories</div>
-                           </div>
-                           <Badge variant="outline" className="text-xs">
-                             {workout.completed ? "Completed" : "Incomplete"}
-                           </Badge>
-                         </div>
-                       </div>
-                     ))
-                   ) : (
-                     <div className="text-center py-8 text-muted-foreground">
-                       <p>No workout history available yet.</p>
-                       <p className="text-sm">Start your first workout to see your progress here!</p>
-                     </div>
-                   )}
-                 </div>
-               </FitnessCardContent>
-            </FitnessCard>
-          </TabsContent>
-
-          {/* Nutrition */}
-          <TabsContent value="nutrition" className="space-y-6">
-            <FitnessCard className="animate-slide-up">
-              <FitnessCardContent className="text-center py-12">
-                <Target className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                <h3 className="font-semibold mb-2">Nutrition Analytics Coming Soon</h3>
-                <p className="text-muted-foreground">
-                  Detailed nutrition progress tracking will be available here
-                </p>
-              </FitnessCardContent>
-            </FitnessCard>
-          </TabsContent>
-
-          {/* Achievements */}
-          <TabsContent value="achievements" className="space-y-6">
-            <FitnessCard className="animate-slide-up">
-              <FitnessCardHeader>
-                <FitnessCardTitle>Your Achievements</FitnessCardTitle>
-                <FitnessCardDescription>
-                  Milestones you've reached on your fitness journey
-                </FitnessCardDescription>
-              </FitnessCardHeader>
-              
-              <FitnessCardContent>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {achievements.map((achievement, index) => (
-                    <div 
-                      key={index}
-                      className={`p-4 rounded-lg border transition-all ${
-                        achievement.earned 
-                          ? "border-primary/50 bg-primary/5" 
-                          : "border-border bg-muted/30"
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className={`p-2 rounded-lg ${
-                          achievement.earned 
-                            ? "bg-primary text-primary-foreground" 
-                            : "bg-muted text-muted-foreground"
-                        }`}>
-                          <Award className="w-4 h-4" />
-                        </div>
-                        
-                        <div className="flex-1">
-                          <h4 className="font-semibold mb-1">{achievement.name}</h4>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {achievement.description}
-                          </p>
-                          
-                          {achievement.earned ? (
-                            <Badge variant="outline" className="text-xs">
-                              Earned {achievement.date}
-                            </Badge>
-                          ) : (
-                            <div className="space-y-1">
-                              <div className="flex items-center justify-between text-xs">
-                                <span>Progress</span>
-                                <span>{achievement.progress}%</span>
-                              </div>
-                              <div className="w-full bg-muted rounded-full h-1">
-                                <div 
-                                  className="bg-primary h-1 rounded-full transition-all duration-500"
-                                  style={{ width: `${achievement.progress}%` }}
-                                />
-                              </div>
-                            </div>
-                          )}
+                {/* Weight Chart */}
+                <FitnessCard>
+                  <FitnessCardHeader>
+                    <FitnessCardTitle>Weight Progress</FitnessCardTitle>
+                  </FitnessCardHeader>
+                  <FitnessCardContent>
+                    {chartData.length > 0 ? (
+                      <div className="h-80 w-full overflow-hidden">
+                        <div className="w-full h-full min-w-0">
+                          <ChartContainer
+                            config={{
+                              weight: {
+                                label: "Weight",
+                                color: "hsl(var(--primary))",
+                              },
+                            }}
+                            className="w-full h-full"
+                          >
+                            <LineChart
+                              data={chartData}
+                              margin={{
+                                top: 20,
+                                right: 20,
+                                left: 20,
+                                bottom: 40,
+                              }}
+                            >
+                              <XAxis
+                                dataKey="date"
+                                tick={{
+                                  fontSize: 10,
+                                  fill: "hsl(var(--muted-foreground))",
+                                }}
+                                tickLine={{ stroke: "hsl(var(--border))" }}
+                                axisLine={{ stroke: "hsl(var(--border))" }}
+                                interval="preserveStartEnd"
+                                height={50}
+                                angle={-45}
+                                textAnchor="end"
+                                tickMargin={10}
+                              />
+                              <YAxis
+                                domain={["dataMin - 2", "dataMax + 2"]}
+                                tick={{
+                                  fontSize: 12,
+                                  fill: "hsl(var(--muted-foreground))",
+                                }}
+                                tickLine={{ stroke: "hsl(var(--border))" }}
+                                axisLine={{ stroke: "hsl(var(--border))" }}
+                                tickFormatter={(value) => `${value}`}
+                                width={60}
+                              />
+                              <ChartTooltip
+                                content={({ active, payload, label }) => {
+                                  if (active && payload && payload.length) {
+                                    const data = payload[0].payload;
+                                    return (
+                                      <div className="bg-background border border-border rounded-lg p-3 shadow-lg">
+                                        <p className="font-medium">
+                                          {format(
+                                            parseISO(data.fullDate),
+                                            "MMM dd, yyyy"
+                                          )}
+                                        </p>
+                                        <p className="text-primary font-semibold">
+                                          {payload[0].value} {weightUnit}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                          Weight Entry
+                                        </p>
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                }}
+                              />
+                              <Line
+                                type="monotone"
+                                dataKey="weight"
+                                stroke="hsl(var(--primary))"
+                                strokeWidth={3}
+                                dot={{
+                                  fill: "hsl(var(--primary))",
+                                  strokeWidth: 2,
+                                  r: 4,
+                                  stroke: "hsl(var(--background))",
+                                }}
+                                activeDot={{
+                                  r: 6,
+                                  stroke: "hsl(var(--primary))",
+                                  strokeWidth: 2,
+                                  fill: "hsl(var(--background))",
+                                }}
+                              />
+                            </LineChart>
+                          </ChartContainer>
                         </div>
                       </div>
+                    ) : (
+                      <div className="h-80 flex items-center justify-center text-muted-foreground">
+                        <div className="text-center">
+                          <Weight className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                          <p>No weight data yet</p>
+                          <p className="text-sm">
+                            Add your first weight entry above
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </FitnessCardContent>
+                </FitnessCard>
+              </div>
+
+              {/* Weight Statistics */}
+              <div className="space-y-6">
+                {weightStats && (
+                  <FitnessCard>
+                    <FitnessCardHeader>
+                      <FitnessCardTitle>Weight Statistics</FitnessCardTitle>
+                    </FitnessCardHeader>
+                    <FitnessCardContent>
+                      <div className="space-y-4">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold">
+                            {weightStats.current} {weightUnit}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Current Weight
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div
+                            className={`text-lg font-semibold flex items-center justify-center gap-1 ${getTrendColor(
+                              weightStats.trend
+                            )}`}
+                          >
+                            {getTrendIcon(weightStats.trend)}
+                            {weightStats.change.toFixed(1)} {weightUnit}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Change
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div
+                            className={`text-lg font-semibold ${getTrendColor(
+                              weightStats.trend
+                            )}`}
+                          >
+                            {weightStats.changePercent.toFixed(1)}%
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Percentage
+                          </div>
+                        </div>
+                      </div>
+                    </FitnessCardContent>
+                  </FitnessCard>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Progress Photos Tab */}
+          <TabsContent value="photos" className="space-y-6">
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* Photo Upload */}
+              <div className="lg:col-span-1">
+                <FitnessCard>
+                  <FitnessCardHeader>
+                    <FitnessCardTitle className="flex items-center gap-2">
+                      <Camera className="w-5 h-5" />
+                      Upload Photo
+                    </FitnessCardTitle>
+                  </FitnessCardHeader>
+                  <FitnessCardContent>
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Photo Type</Label>
+                        <select
+                          value={selectedPhotoType}
+                          onChange={(e) =>
+                            setSelectedPhotoType(
+                              e.target.value as "front" | "side" | "back"
+                            )
+                          }
+                          className="mt-1 w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
+                        >
+                          <option value="front">Front View</option>
+                          <option value="side">Side View</option>
+                          <option value="back">Back View</option>
+                        </select>
+                      </div>
+
+                      <FitnessButton
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        className="w-full"
+                      >
+                        {isUploading ? (
+                          <>
+                            <Upload className="w-4 h-4 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Camera className="w-4 h-4" />
+                            Upload Photo
+                          </>
+                        )}
+                      </FitnessButton>
+
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                      />
                     </div>
-                  ))}
-                </div>
-              </FitnessCardContent>
-            </FitnessCard>
+                  </FitnessCardContent>
+                </FitnessCard>
+              </div>
+
+              {/* Photo Timeline */}
+              <div className="lg:col-span-2">
+                <FitnessCard>
+                  <FitnessCardHeader>
+                    <FitnessCardTitle>Photo Timeline</FitnessCardTitle>
+                  </FitnessCardHeader>
+                  <FitnessCardContent>
+                    {Object.keys(photosByDate).length > 0 ? (
+                      <div className="space-y-4">
+                        {Object.entries(photosByDate)
+                          .sort(
+                            ([a], [b]) =>
+                              new Date(b).getTime() - new Date(a).getTime()
+                          )
+                          .map(([date, photos]) => (
+                            <div key={date} className="space-y-2">
+                              <div className="flex items-center gap-2 text-sm font-medium">
+                                <Calendar className="w-4 h-4" />
+                                {format(parseISO(date), "MMM dd, yyyy")}
+                              </div>
+                              <div className="grid grid-cols-3 gap-2">
+                                {photos.map((photo) => (
+                                  <div
+                                    key={photo.id}
+                                    className="relative group"
+                                  >
+                                    <img
+                                      src={photo.url}
+                                      alt={`${photo.type} view`}
+                                      className="w-full h-20 object-cover rounded-lg cursor-pointer"
+                                      onClick={() => {
+                                        setSelectedPhoto(photo);
+                                        setShowPhotoModal(true);
+                                      }}
+                                    />
+                                    <div className="absolute top-1 left-1">
+                                      <Badge
+                                        variant="secondary"
+                                        className="text-xs"
+                                      >
+                                        {photo.type}
+                                      </Badge>
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        deleteProgressPhoto(photo.id);
+                                      }}
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <ImageIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No progress photos yet</p>
+                        <p className="text-sm">Upload your first photo above</p>
+                      </div>
+                    )}
+                  </FitnessCardContent>
+                </FitnessCard>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
-      </main>
-    </div>
-  )
-}
 
-export default ProgressPage
+        {/* Photo Modal */}
+        {showPhotoModal && selectedPhoto && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-background rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
+              <div className="p-4 border-b flex items-center justify-between">
+                <h3 className="text-lg font-semibold capitalize">
+                  {selectedPhoto.type} View
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowPhotoModal(false)}
+                >
+                  ×
+                </Button>
+              </div>
+              <div className="p-4">
+                <img
+                  src={selectedPhoto.url}
+                  alt={`${selectedPhoto.type} view`}
+                  className="w-full h-auto max-h-[70vh] object-contain rounded-lg"
+                />
+                <div className="mt-4 text-sm text-muted-foreground">
+                  Uploaded:{" "}
+                  {format(parseISO(selectedPhoto.created_at), "MMM dd, yyyy")}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ProgressPage;
