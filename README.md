@@ -1,6 +1,6 @@
-# DynamoPulseFit - AI-Powered Fitness Platform
+# FitBud AI - AI-Powered Fitness Platform
 
-DynamoPulseFit is a comprehensive fitness platform that leverages AI to provide personalized workout plans, form analysis, nutrition tracking, and progress monitoring.
+FitBud AI is a comprehensive fitness platform that leverages AI to provide personalized workout plans, form analysis, nutrition tracking, and progress monitoring.
 
 ## Features
 
@@ -23,8 +23,8 @@ DynamoPulseFit is a comprehensive fitness platform that leverages AI to provide 
   - React Query
   - Zustand (State Management)
   - Chart.js / Recharts
-  
 - **Backend**:
+
   - Supabase (Authentication, Database, Storage)
   - Supabase Edge Functions
   - OpenAI API Integration
