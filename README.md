@@ -16,7 +16,7 @@
     <img src="media/logo.png" alt="Logo" width="120" height="120">
   </a>
 
-<h3 align="center">project_title</h3>
+<h3 align="center">FitBud AI</h3>
 
   <p align="center">
 This is an AI gym buddy web application that calculates the calories of the food you eat when you take a photo of it, generates a personalized one-week workout plan based on videos of your gym, and tracks your weight progress over months.
