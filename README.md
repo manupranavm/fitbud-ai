@@ -5,7 +5,6 @@ FitBud AI is a comprehensive fitness platform that leverages AI to provide perso
 ## Features
 
 - **AI Workout Generation**: Get personalized workout plans based on your goals, equipment, and fitness level
-- **Form Monitoring**: Real-time form analysis and feedback using AI-powered pose detection
 - **Equipment-Based Workouts**: Find workouts tailored to the equipment you have available
 - **Nutrition Tracking**: Log and analyze your food intake with AI-powered food image analysis
 - **Progress Tracking**: Monitor your fitness journey with detailed progress metrics and visualizations
@@ -28,11 +27,6 @@ FitBud AI is a comprehensive fitness platform that leverages AI to provide perso
   - Supabase (Authentication, Database, Storage)
   - Supabase Edge Functions
   - OpenAI API Integration
-
-- **AI/ML**:
-  - TensorFlow.js
-  - MediaPipe
-  - Hugging Face Transformers
 
 ## Project Structure
 
