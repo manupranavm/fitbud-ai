@@ -53,8 +53,6 @@ This is an AI gym buddy web application that calculates the calories of the food
 [![fitbud-ai Preview][product-preview]](https://github.com/manupranavm/fitbud-ai/blob/main/media/track_nutrition.mp4)
 [![fitbud-ai Demo][product-video]](https://github.com/manupranavm/fitbud-ai/blob/main/media/gym_plan.mp4)
 
-Here's a blank template to get started: To avoid retyping too much info. Do a search and replace with your text editor for the following: `manupranavm`, `fitbud-ai`, `twitter_handle`, `linkedin_username`, `email_client`, `email`, `project_title`, `project_description`
-
 ## Built With
 
 **Frontend**
