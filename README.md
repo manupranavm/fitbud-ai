@@ -13,7 +13,7 @@
 <div align="center">
 
   <a href="https://github.com/manupranavm/fitbud-ai">
-    <img src="media/logo.png" alt="Logo" width="120" height="120">
+    <img width="49" height="48" alt="image" src="https://github.com/user-attachments/assets/478bbda4-2592-419e-9a1b-8e04199bcb74" />
   </a>
 
 <h3 align="center">FitBud AI</h3>
