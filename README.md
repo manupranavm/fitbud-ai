@@ -65,8 +65,8 @@ src/
 
 ```bash
 # Clone the repository
-git clone https://github.com/manupranavm/dynamo-pulse-fit.git
-cd dynamo-pulse-fit
+git clone https://github.com/manupranavm/fitbud-ai.git
+cd fitbud-ai
 
 # Install dependencies
 npm install
