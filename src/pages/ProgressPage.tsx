@@ -120,7 +120,7 @@ const ProgressPage: React.FC = () => {
         .order("date", { ascending: true });
 
       if (error) throw error;
-      setWeightEntries((data as WeightEntry[]) || []);
+      setWeightEntries((data as unknown as WeightEntry[]) || []);
     } catch (error) {
       console.error("Error loading weight history:", error);
       toast({
@@ -142,7 +142,7 @@ const ProgressPage: React.FC = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setProgressPhotos((data as ProgressPhoto[]) || []);
+      setProgressPhotos((data as unknown as ProgressPhoto[]) || []);
     } catch (error) {
       console.error("Error loading progress photos:", error);
       toast({

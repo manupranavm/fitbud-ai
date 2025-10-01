@@ -133,7 +133,15 @@ const Dashboard: React.FC = () => {
 
   const todaysWorkout = getTodaysWorkout();
 
-  const quickActions = [
+  const quickActions: Array<{
+    title: string;
+    description: string;
+    icon: React.ComponentType<{ className?: string }>;
+    href?: string;
+    variant: "food" | "gradient";
+    onClick?: () => void;
+    isNew?: boolean;
+  }> = [
     {
       title: "Log Meal",
       description: "Scan or add your meals",
